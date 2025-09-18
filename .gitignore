@@ -1,0 +1,69 @@
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+.pub/
+build/
+flutter_*.png
+
+# iOS/Xcode
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/.generated/
+**/ios/Pods/
+**/ios/Podfile.lock
+
+# Android/Gradle
+**/android/.gradle/
+**/android/app/build/
+**/android/local.properties
+
+# VS Code
+.vscode/
+.idea/
+
+# MacOS/Linux/Windows
+.DS_Store
+*.iml
+
+# Exportierte Dateien
+exports/
+*.csv
+
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+.pub/
+build/
+flutter_*.png
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
+
+# Android
+local.properties
+*.keystore
+*.jks
+
+# iOS
+**/Pods/
+**/.symlinks/
+**/DerivedData/
+*.xcuserstate
+
+# Windows / MacOS / Linux
+*.DS_Store
+*.class
+*.log
+*.pyc
+*.swp
+*.out
+
+# Generated files
+pubspec.lock
