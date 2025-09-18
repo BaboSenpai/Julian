@@ -1,0 +1,70 @@
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@
+ dependencies:
+   flutter:
+     sdk: flutter
++  csv: ^5.0.2
++  file_saver: ^0.2.12
+
+ flutter:
+   uses-material-design: true
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@
+ import 'package:flutter/material.dart';
++import 'dart:convert';
++import 'dart:typed_data';
++import 'package:csv/csv.dart';
++import 'package:file_saver/file_saver.dart';
++
++// -- Added helper types & functions for customer list + CSV export --
++class CustomerView {
++  final Customer customer;
++  final double totalQty;
++  final int bookingCount;
++  const CustomerView({
++    required this.customer,
++    required this.totalQty,
++    required this.bookingCount,
++  });
++}
++
++List<CustomerView> buildCustomerViews({
++  required List<Customer> customers,
++  required List<Booking> bookings,
++}) {
++  final Map<String, List<Booking>> byCustomer = <String, List<Booking>>{};
++  for (final b in bookings) {
++    byCustomer.putIfAbsent(b.customerId, () => <Booking>[]).add(b);
++  }
++  return customers.map((c) {
++    final list = byCustomer[c.id] ?? const <Booking>[];
++    final total = list.fold<double>(0, (acc, b) => acc + b.qty);
++    return CustomerView(customer: c, totalQty: total, bookingCount: list.length);
++  }).toList()
++    ..sort((a, b) => a.customer.name.compareTo(b.customer.name));
++}
++
++String buildCustomerCsv(List<CustomerView> views) {
++  final rows = <List<dynamic>>[
++    ['Kunde', 'Anzahl Buchungen', 'Menge gesamt'],
++    ...views.map((v) => [v.customer.name, v.bookingCount, v.totalQty]),
++  ];
++  return const ListToCsvConverter(fieldDelimiter: ';', eol: '\r\n').convert(rows);
++}
++
++Uint8List withUtf8Bom(String csv) {
++  const bom = [0xEF, 0xBB, 0xBF];
++  final bytes = utf8.encode(csv);
++  return Uint8List.fromList(<int>[...bom, ...bytes]);
++}
++
++Future<void> saveCsvToDisk({required String filename, required Uint8List bytes}) async {
++  await FileSaver.instance.saveFile(
++    name: filename,
++    bytes: bytes,
++    ext: 'csv',
++    mimeType: MimeType.text,
++  );
++}

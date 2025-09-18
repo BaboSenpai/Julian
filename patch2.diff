@@ -1,0 +1,59 @@
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@
+        appBar: AppBar(
+          title: const Text('Kunden'),
+-          actions: [],
++          actions: [
++            IconButton(
++              tooltip: 'CSV exportieren',
++              icon: const Icon(Icons.download),
++              onPressed: () async {
++                // Hier musst du deine echten Kunden/Buchungen übergeben!
++                // Beispiel: buildCustomerViews(customers: customersStore, bookings: bookingsStore)
++                final views = buildCustomerViews(
++                  customers: customersStore,
++                  bookings: bookingsStore,
++                );
++                final csv = buildCustomerCsv(views);
++                final bytes = withUtf8Bom(csv);
++                await saveCsvToDisk(filename: 'kunden_export', bytes: bytes);
++                if (context.mounted) {
++                  ScaffoldMessenger.of(context).showSnackBar(
++                    const SnackBar(content: Text('CSV exportiert.')),
++                  );
++                }
++              },
++            ),
++          ],
+        ),
+-        body: const Placeholder(),
++        body: const CustomerListView(),
+@@
+   @override
+   Widget build(BuildContext context) {
+-    return Center(child: Text('TODO: Kundenliste'));
++    final views = buildCustomerViews(
++      customers: customersStore,
++      bookings: bookingsStore,
++    );
++    if (views.isEmpty) {
++      return const Center(child: Text('Keine Kunden vorhanden'));
++    }
++    return ListView.separated(
++      itemCount: views.length,
++      separatorBuilder: (_, __) => const Divider(height: 1),
++      itemBuilder: (_, i) {
++        final v = views[i];
++        final subtitle = v.bookingCount == 0
++            ? 'Keine Buchungen'
++            : '${v.bookingCount} Buchungen · Menge gesamt: ${v.totalQty}';
++        return ListTile(
++          leading: const Icon(Icons.person),
++          title: Text(v.customer.name),
++          subtitle: Text(subtitle),
++        );
++      },
++    );
+   }
+ }
