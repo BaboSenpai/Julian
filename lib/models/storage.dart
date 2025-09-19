@@ -9,6 +9,7 @@ import 'package:van_inventory/models/state.dart';
 
 
 
+
 late Box<String> skuBox; // Artikelnummern (SKU): key=itemName, value=sku
 
 class Storage {

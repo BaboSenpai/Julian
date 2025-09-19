@@ -1,7 +1,7 @@
 //lib/services/cloud.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth';
 
 // alle Models (Item, Customer, Depletion, UserMember)
 import 'package:van_inventory/models/models.dart';
@@ -11,6 +11,7 @@ import 'package:van_inventory/models/state.dart';
 
 // Hive-Storage (liegt bei dir unter models/)
 import 'package:van_inventory/models/storage.dart';
+
 
 
 class Cloud {
