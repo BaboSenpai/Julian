@@ -1,24 +1,30 @@
 // lib/main.dart
-import 'dart:async';
 import 'package:flutter/material.dart';
 
-// Hive & Co. stecken hinter Storage.open() in models/storage.dart
+// Firebase
 import 'package:firebase_core/firebase_core.dart' as fb_core;
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-
 import 'firebase_options.dart' as fb_opts;
 
-// --- eigene Module (nach der Aufteilung) ---
-import 'models/models.dart';        // Item, Customer, Depletion, ChangeLogEntry, globale Listen, fmtDate
-import 'models/storage.dart';       // Storage.open(), Storage.saveAll()
-import 'models/csv_export.dart';    // CsvBuilders + exportCsvFile()
-import 'services/cloud.dart';       // Cloud.*
-import 'ui/team_tab.dart';          // TeamTab
-import 'features/auth/auth_gate.dart'; // AuthGate (Login/Logout-Fluss)
+// Eigene Module (immer über package:-Pfade!)
+import 'package:van_inventory/models/models.dart';      // Item, Customer, Depletion, UserMember
+import 'package:van_inventory/models/state.dart';       // items, customers, depletions, teamMembers
+import 'package:van_inventory/models/storage.dart';     // Storage.open(), Storage.saveAll()
+import 'package:van_inventory/models/csv_export.dart';  // CsvBuilders + exportCsvFile()
+import 'package:van_inventory/services/cloud.dart';     // Cloud.*
+import 'package:van_inventory/ui/team_tab.dart';        // TeamTab
+import 'package:van_inventory/features/auth/auth_gate.dart'; // AuthGate
 
 // ===== Backend-Auswahl (local | firebase) =====
-const String kBackend = String.fromEnvironment('BACKEND', defaultValue: 'local');
-bool get kUseFirebase => kBackend == 'firebase';
+const String _backend = String.fromEnvironment('BACKEND', defaultValue: 'local');
+const bool kUseFirebase = _backend == 'firebase';
+
+// Kleiner Datums-Helper, der in main.dart verwendet wird (z. B. fmtDate(c.date))
+String fmtDate(DateTime d) {
+  return '${d.year.toString().padLeft(4, '0')}-'
+         '${d.month.toString().padLeft(2, '0')}-'
+         '${d.day.toString().padLeft(2, '0')}';
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

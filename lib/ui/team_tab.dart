@@ -1,11 +1,16 @@
 //lib/ui/team_tab.dart
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
 // alle Models inkl. UserMember
 import 'package:van_inventory/models/models.dart';
 
 // globale Listen/State (falls hier z. B. items/teamMembers genutzt werden)
 import 'package:van_inventory/models/state.dart';
+
+// Cloud-Service (liefert Cloud.watchMembers usw.)
+import 'package:van_inventory/services/cloud.dart';
+
 
 
 
