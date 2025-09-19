@@ -9,8 +9,6 @@
 +              tooltip: 'CSV exportieren',
 +              icon: const Icon(Icons.download),
 +              onPressed: () async {
-+                // Hier musst du deine echten Kunden/Buchungen übergeben!
-+                // Beispiel: buildCustomerViews(customers: customersStore, bookings: bookingsStore)
 +                final views = buildCustomerViews(
 +                  customers: customersStore,
 +                  bookings: bookingsStore,

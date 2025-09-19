@@ -1,22 +1,47 @@
+// lib/main.dart
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert'; // CSV/BOM
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_core/firebase_core.dart' as fb_core;
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:cloud_firestore/cloud_firestore.dart' as fs;
+import 'firebase_options.dart' as fb_opts;
+// ===== Backend-Auswahl (local | firebase)
+const String kBackend = String.fromEnvironment('BACKEND', defaultValue: 'local');
+bool get kUseFirebase => kBackend == 'firebase';
+
+// ===== Firebase (optional) =====
+// Vorher: flutter pub add firebase_core firebase_auth cloud_firestore
+// und:    flutterfire configure  -> erzeugt lib/firebase_options.dart
+
 
 /// =========================
 ///   GLOBAL / PERSISTENZ
 /// =========================
-
 late Box<String> skuBox; // Artikelnummern (SKU): key=itemName, value=sku
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase nur, wenn ausgewählt
+  if (kUseFirebase) {
+    await fb_core.Firebase.initializeApp(
+      options: fb_opts.DefaultFirebaseOptions.currentPlatform,
+    );
+    await Cloud.init(tenantId: 'van1'); // einfache Test-Tenant-ID
+  }
+
+  // Hive (immer)
   await Hive.initFlutter();
   await Storage.open(); // Haupt-Boxen öffnen / laden
   skuBox = await Hive.openBox<String>('skus'); // SKU-Box
+
   runApp(const VanInventoryApp());
 }
 
@@ -78,7 +103,6 @@ class Storage {
 
 class Item {
   Item({required this.name, required this.qty, required this.min, required this.target});
-
   String name;
   int qty;
   int min;
@@ -121,16 +145,13 @@ class Customer {
     date: DateTime.fromMillisecondsSinceEpoch(m['dateMs'] as int),
     note: m['note'] as String?,
   );
-
-  // Für Map-Key benutzt Flutter standardmäßig ==/hashCode auf Objektidentität.
-  // Hier lassen wir es so; im UI gruppieren wir über die Depletions (siehe unten).
 }
 
 class Depletion {
   Depletion({required this.itemName, required this.qty, required this.customer, required this.timestamp});
   String itemName;
   int qty;
-  Customer customer; // NICHT NULLABLE – wir setzen ihn auch nicht mehr auf null
+  Customer customer; // NICHT NULLABLE
   DateTime timestamp;
 
   Map<String, dynamic> toMap() => {
@@ -201,6 +222,10 @@ Future<void> setSkuForItem(String itemName, String? sku) async {
   }
 }
 
+/// ========= NEU: globale Kundenauswahl (Schnell-Entnahme) =========
+Customer? activeCustomer; // null = kein aktiver Kunde
+String customerKey(Customer c) => '${c.name}|${c.date.millisecondsSinceEpoch}';
+
 /// =========================
 ///          APP
 /// =========================
@@ -215,8 +240,137 @@ class VanInventoryApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: kUseFirebase ? const AuthGate() : const HomeScreen(),
     );
+  }
+}
+
+/// ---------- Auth (nur bei Firebase) ----------
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<fb_auth.User?>(
+      stream: fb_auth.FirebaseAuth.instance.authStateChanges(),
+      builder: (_, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Material(child: Center(child: CircularProgressIndicator()));
+        }
+        if (snap.data == null) return const SignInPage();
+        return const TenantGate();
+      },
+    );
+  }
+}
+
+class SignInPage extends StatefulWidget {
+  const SignInPage({super.key});
+  @override State<SignInPage> createState() => _SignInPageState();
+}
+class _SignInPageState extends State<SignInPage> {
+  final email = TextEditingController();
+  final pw = TextEditingController();
+  bool isRegister = false;
+  String? error;
+
+  Future<void> submit() async {
+    try {
+      if (isRegister) {
+        await fb_auth.FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email.text.trim(), password: pw.text.trim());
+      } else {
+        await fb_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email.text.trim(), password: pw.text.trim());
+      }
+    } on fb_auth.FirebaseAuthException catch (e) {
+      setState(() => error = e.message);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Anmelden')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'E-Mail')),
+          const SizedBox(height: 8),
+          TextField(controller: pw, obscureText: true, decoration: const InputDecoration(labelText: 'Passwort')),
+          if (error != null) Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(error!, style: const TextStyle(color: Colors.red)) ),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: submit, child: Text(isRegister ? 'Konto erstellen' : 'Anmelden')),
+          TextButton(
+            onPressed: () => setState(() => isRegister = !isRegister),
+            child: Text(isRegister ? 'Schon Konto? Einloggen' : 'Neu hier? Registrieren'),
+          ),
+          if (!isRegister)
+            TextButton(
+              onPressed: () async {
+                if (email.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('E-Mail eingeben')));
+                  return;
+                }
+                await fb_auth.FirebaseAuth.instance.sendPasswordResetEmail(email: email.text.trim());
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwort-Reset gesendet')));
+                }
+              },
+              child: const Text('Passwort vergessen?'),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+class TenantGate extends StatefulWidget {
+  const TenantGate({super.key});
+  @override State<TenantGate> createState() => _TenantGateState();
+}
+class _TenantGateState extends State<TenantGate> {
+  bool ready = false;
+  String? noAccessMsg;
+
+  @override
+  void initState() { super.initState(); _init(); }
+
+  Future<void> _init() async {
+    if (!kUseFirebase) { setState(() => ready = true); return; }
+    // Mitgliedschaft sicherstellen: ist der eingeloggte User im Team?
+    final ok = await Cloud.ensureMembershipForCurrentUser();
+    if (!ok) {
+      setState(() {
+        noAccessMsg = 'Dein Konto ist noch keinem Team zugeordnet.\n'
+                      'Bitte Admin um Freischaltung (Einstellungen → Team).';
+      });
+      return;
+    }
+    await Cloud.bindLiveListeners();
+    setState(() => ready = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (noAccessMsg != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Kein Zugriff')),
+        body: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Padding(padding: const EdgeInsets.all(16), child: Text(noAccessMsg!, textAlign: TextAlign.center)),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => fb_auth.FirebaseAuth.instance.signOut(),
+              child: const Text('Abmelden'),
+            ),
+          ]),
+        ),
+      );
+    }
+    if (!ready) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return const HomeScreen();
   }
 }
 
@@ -230,7 +384,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Future<void> _open(Widget page) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-    setState(() {});
+    setState(() {}); // nach Rückkehr refreshen
   }
 
   @override
@@ -240,7 +394,56 @@ class _HomeScreenState extends State<HomeScreen> {
     final low   = items.where((e) => e.isLow).length;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Van Inventory')),
+      appBar: AppBar(
+        title: const Text('Van Inventory'),
+        actions: [
+          if (customers.isNotEmpty)
+            DropdownButtonHideUnderline(
+              child: DropdownButton<String?>(
+                value: activeCustomer == null ? null : customerKey(activeCustomer!),
+                hint: const Text('Kunde wählen'),
+                alignment: Alignment.centerRight,
+                borderRadius: BorderRadius.circular(12),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Kein Kunde (Standard)'),
+                  ),
+                  ...customers
+                      .map((c) => DropdownMenuItem<String?>(
+                            value: customerKey(c),
+                            child: Text('${c.name} – ${fmtDate(c.date)}'),
+                          ))
+                      .toList()
+                    ..sort((a, b) =>
+                        ((a.child as Text).data!).compareTo((b.child as Text).data!)),
+                ],
+                onChanged: (v) {
+                  setState(() {
+                    activeCustomer = v == null
+                        ? null
+                        : customers.firstWhere((c) => customerKey(c) == v);
+                  });
+                  if (activeCustomer != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Aktiver Kunde: ${activeCustomer!.name}')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Kein aktiver Kunde')),
+                    );
+                  }
+                },
+              ),
+            ),
+          if (kUseFirebase) IconButton(
+            tooltip: 'Abmelden',
+            icon: const Icon(Icons.logout),
+            onPressed: () => fb_auth.FirebaseAuth.instance.signOut(),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
@@ -253,6 +456,17 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(child: _StatCard(title: 'Minimum (rot)', value: '$low', color: Colors.red)),
             ],
           ),
+          if (activeCustomer != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.person, size: 18),
+                const SizedBox(width: 6),
+                Text('Aktiver Kunde: ${activeCustomer!.name} – ${fmtDate(activeCustomer!.date)}',
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ],
           const SizedBox(height: 20),
           const Text('Schnellzugriff', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
@@ -367,7 +581,86 @@ class _InventoryScreenState extends State<InventoryScreen> {
     return await showDatePicker(context: ctx, initialDate: initial, firstDate: DateTime(2020), lastDate: DateTime(2100));
   }
 
+  /// ENTNAHME-Dialog – mit Quick-Flow wenn `activeCustomer` gesetzt ist
   Future<void> _logDepletionDialog(Item item) async {
+    if (activeCustomer != null) {
+      final qtyCtrl = TextEditingController(text: '1');
+      final form = GlobalKey<FormState>();
+
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Entnahme: ${item.name}'),
+          content: Form(
+            key: form,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('Kunde: ${activeCustomer!.name} – ${fmtDate(activeCustomer!.date)}'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: qtyCtrl,
+                decoration: const InputDecoration(labelText: 'Menge (Stk)'),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final n = int.tryParse(v ?? '');
+                  if (n == null || n <= 0) return 'Zahl > 0 eingeben';
+                  return null;
+                },
+              ),
+            ]),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
+            FilledButton(
+              onPressed: () { if (!form.currentState!.validate()) return; Navigator.pop(ctx, true); },
+              child: const Text('Buchen'),
+            ),
+          ],
+        ),
+      );
+
+      if (ok == true) {
+        final req = int.parse(qtyCtrl.text);
+        final taken = req.clamp(0, item.qty);
+        final before = item.qty;
+
+        setState(() {
+          item.qty -= taken;
+          if (taken > 0) {
+            final dep = Depletion(
+              itemName: item.name,
+              qty: taken,
+              customer: activeCustomer!,
+              timestamp: DateTime.now(),
+            );
+            depletions.add(dep);
+            changelog.insert(0, ChangeLogEntry(
+              timestamp: DateTime.now(),
+              category: 'material',
+              action: 'Entnahme gebucht',
+              details: '${item.name}: $before → ${item.qty} (−$taken) für ${activeCustomer!.name}',
+            ));
+            if (kUseFirebase) {
+              Cloud.addDepletion(dep);
+              Cloud.upsertItem(item);
+            }
+          }
+        });
+        await Storage.saveAll();
+
+        if (taken < req) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Nur $taken Stück entnommen (Bestand war zu niedrig).')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Entnahme gebucht.')),
+          );
+        }
+      }
+      return;
+    }
+
+    // --- Standard-Flow wie bisher (kein aktiver Kunde) ---
     final qtyCtrl = TextEditingController(text: '1');
     Customer? chosenCustomer = customers.isNotEmpty ? customers.first : null;
     final newNameCtrl = TextEditingController();
@@ -451,7 +744,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     if (ok == true) {
       final req = int.parse(qtyCtrl.text);
-      // Kunde bestimmen / ggf. neu anlegen
       Customer cust;
       if (newNameCtrl.text.trim().isNotEmpty) {
         cust = Customer(name: newNameCtrl.text.trim(), date: newDate);
@@ -460,6 +752,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           timestamp: DateTime.now(), category: 'customer', action: 'Kunde angelegt',
           details: '${cust.name} – ${fmtDate(cust.date)}',
         ));
+        if (kUseFirebase) await Cloud.upsertCustomer(cust);
       } else {
         cust = chosenCustomer!;
       }
@@ -469,11 +762,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
       setState(() {
         item.qty -= taken;
         if (taken > 0) {
-          depletions.add(Depletion(itemName: item.name, qty: taken, customer: cust, timestamp: DateTime.now()));
+          final dep = Depletion(itemName: item.name, qty: taken, customer: cust, timestamp: DateTime.now());
+          depletions.add(dep);
           changelog.insert(0, ChangeLogEntry(
             timestamp: DateTime.now(), category: 'material', action: 'Entnahme gebucht',
             details: '${item.name}: $before → ${item.qty} (−$taken) für ${cust.name}',
           ));
+          if (kUseFirebase) {
+            Cloud.addDepletion(dep);
+            Cloud.upsertItem(item);
+          }
         }
       });
       await Storage.saveAll();
@@ -553,7 +851,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
         details: '${it.name} (qty=${it.qty}, min=${it.min}, target=${it.target})',
       ));
       await Storage.saveAll();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('„${it.name}“ hinzugefügt')));
+      if (kUseFirebase) await Cloud.upsertItem(it);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('„${it.name}“ hinzugefügt')));
+      }
     }
   }
 
@@ -640,6 +941,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         details: '${before.name}: ${changes.join(', ')}',
       ));
       await Storage.saveAll();
+      if (kUseFirebase) await Cloud.upsertItem(item);
     }
   }
 
@@ -662,6 +964,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         timestamp: DateTime.now(), category: 'material', action: 'Artikel gelöscht', details: item.name,
       ));
       await Storage.saveAll();
+      if (kUseFirebase) await Cloud.deleteItem(item.name);
     }
   }
 
@@ -740,6 +1043,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           details: '${item.name}: $before → ${item.qty} (+1)',
                         ));
                         await Storage.saveAll();
+                        if (kUseFirebase) await Cloud.upsertItem(item);
                       },
                       icon: const Icon(Icons.add_circle_outline),
                     ),
@@ -763,17 +1067,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 }
 
-/// ========= Aufmaß (Kunden) – VERSION ohne IDs (nutzt d.customer) =========
-
+/// ========= Aufmaß (Kunden) =========
 class AufmassScreen extends StatefulWidget {
   const AufmassScreen({super.key});
-
   @override
   State<AufmassScreen> createState() => _AufmassScreenState();
 }
 
 class _AufmassScreenState extends State<AufmassScreen> {
-  /// Gruppiert alle Entnahmen nach Kunde/Auftrag
   Map<Customer, List<Depletion>> _groupByCustomer() {
     final map = <Customer, List<Depletion>>{};
     for (final d in depletions) {
@@ -786,7 +1087,6 @@ class _AufmassScreenState extends State<AufmassScreen> {
     return map;
   }
 
-  /// Kunde/Auftrag anlegen oder bearbeiten
   Future<void> _createOrEditCustomer({Customer? existing}) async {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     DateTime date = existing?.date ?? DateTime.now();
@@ -836,9 +1136,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
             ElevatedButton(
-              onPressed: () {
-                if (form.currentState!.validate()) Navigator.pop(ctx, true);
-              },
+              onPressed: () { if (form.currentState!.validate()) Navigator.pop(ctx, true); },
               child: const Text('Speichern'),
             ),
           ],
@@ -862,10 +1160,10 @@ class _AufmassScreenState extends State<AufmassScreen> {
         }
       });
       await Storage.saveAll();
+      if (kUseFirebase) await Cloud.upsertCustomer(existing ?? customers.last);
     }
   }
 
-  /// Kunde löschen (Entnahmen bleiben bestehen – Referenzen NICHT anfassen)
   Future<void> _deleteCustomer(Customer cust) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -887,6 +1185,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
         customers.remove(cust);
       });
       await Storage.saveAll();
+      if (kUseFirebase) await Cloud.deleteCustomer(cust);
     }
   }
 
@@ -894,7 +1193,6 @@ class _AufmassScreenState extends State<AufmassScreen> {
   Widget build(BuildContext context) {
     final grouped = _groupByCustomer();
 
-    // Kunden sortieren: zuerst Datum neu->alt, dann Name
     final keys = [...grouped.keys]..sort((a, b) {
       final byDate = b.date.compareTo(a.date);
       if (byDate != 0) return byDate;
@@ -910,7 +1208,6 @@ class _AufmassScreenState extends State<AufmassScreen> {
               itemBuilder: (c, i) {
                 final cust = keys[i];
                 final list = grouped[cust] ?? <Depletion>[];
-                final total = list.fold<int>(0, (p, e) => p + e.qty);
 
                 return Card(
                   margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -1019,32 +1316,35 @@ class TodayDepletionsScreen extends StatelessWidget {
   }
 }
 
-/// ---------- Einstellungen (Änderungen + Export) ----------
+/// ---------- Einstellungen (Änderungen + Export + Team) ----------
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStateMixin {
+class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    final tabs = <Tab>[
+      const Tab(text: 'Änderungen – Material'),
+      const Tab(text: 'Änderungen – Kunden'),
+      const Tab(text: 'Export'),
+      if (kUseFirebase) const Tab(text: 'Team'),
+    ];
     return DefaultTabController(
-      length: 3,
+      length: tabs.length,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Einstellungen'),
-          bottom: const TabBar(tabs: [
-            Tab(text: 'Änderungen – Material'),
-            Tab(text: 'Änderungen – Kunden'),
-            Tab(text: 'Export'),
-          ]),
+          bottom: TabBar(tabs: tabs),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            _ChangeLogList(category: 'material'),
-            _ChangeLogList(category: 'customer'),
-            _ExportTab(),
+            const _ChangeLogList(category: 'material'),
+            const _ChangeLogList(category: 'customer'),
+            const _ExportTab(),
+            if (kUseFirebase) const TeamTab(),
           ],
         ),
       ),
@@ -1179,6 +1479,330 @@ class _ExportTile extends StatelessWidget {
 }
 
 /// =========================
+///        TEAM / USERS
+/// =========================
+
+class UserMember {
+  UserMember({required this.id, required this.email, required this.role, this.uid});
+  final String id; // Doc-ID (bei registrierten Nutzern == deren UID)
+  final String email;
+  final String role; // 'admin' | 'member'
+  final String? uid;
+
+  UserMember copyWith({String? role, String? uid}) =>
+      UserMember(id: id, email: email, role: role ?? this.role, uid: uid ?? this.uid);
+}
+
+class TeamTab extends StatelessWidget {
+  const TeamTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<UserMember>>(
+      stream: Cloud.watchMembers(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final members = snap.data!;
+        return Scaffold(
+          body: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+            itemCount: members.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final m = members[i];
+              return ListTile(
+                leading: CircleAvatar(child: Text(m.email.isNotEmpty ? m.email[0].toUpperCase() : '?')),
+                title: Text(m.email),
+                subtitle: Text('Rolle: ${m.role}${m.uid == null ? ' • (noch nicht registriert)' : ''}'),
+                trailing: PopupMenuButton<String>(
+                  onSelected: (v) async {
+                    if (v == 'admin' || v == 'member') {
+                      await Cloud.updateMemberRole(m.id, v);
+                    } else if (v == 'delete') {
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Benutzer entfernen?'),
+                          content: Text('„${m.email}“ wirklich aus dem Team entfernen?'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
+                            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Entfernen')),
+                          ],
+                        ),
+                      );
+                      if (ok == true) await Cloud.removeMember(m.id);
+                    } else if (v == 'reset') {
+                      await fb_auth.FirebaseAuth.instance.sendPasswordResetEmail(email: m.email);
+                      // ignore: use_build_context_synchronously
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reset-Mail gesendet')));
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'admin', child: Text('Rolle: Admin')),
+                    const PopupMenuItem(value: 'member', child: Text('Rolle: Member')),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(value: 'reset', child: Text('Passwort zurücksetzen')),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Aus Team entfernen', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            icon: const Icon(Icons.person_add),
+            label: const Text('Benutzer hinzufügen'),
+            onPressed: () async {
+              final emailCtrl = TextEditingController();
+              String role = 'member';
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setSB) => AlertDialog(
+                    title: const Text('Benutzer einladen'),
+                    content: Column(mainAxisSize: MainAxisSize.min, children: [
+                      TextField(
+                        controller: emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'E-Mail'),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: role,
+                        decoration: const InputDecoration(labelText: 'Rolle'),
+                        items: const [
+                          DropdownMenuItem(value: 'member', child: Text('Member')),
+                          DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                        ],
+                        onChanged: (v) => setSB(() => role = v ?? 'member'),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Der Nutzer registriert sich mit dieser E-Mail in der App. '
+                        'Beim ersten Login wird er automatisch dem Team zugeordnet.',
+                      ),
+                    ]),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
+                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Einladen')),
+                    ],
+                  ),
+                ),
+              );
+              if (ok == true && emailCtrl.text.trim().isNotEmpty) {
+                await Cloud.addMemberByEmail(emailCtrl.text.trim(), role: role);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Benutzer hinzugefügt')));
+                }
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// =========================
+///     CLOUD (Firebase)
+/// =========================
+class Cloud {
+  Cloud._();
+  static fs.FirebaseFirestore get _db => fs.FirebaseFirestore.instance;
+
+  static late String tenantId;
+  static fs.CollectionReference<Map<String, dynamic>> get _tenRoot =>
+      _db.collection('tenants');
+
+  static fs.CollectionReference<Map<String, dynamic>> get _itemsCol =>
+      _tenRoot.doc(tenantId).collection('items');
+  static fs.CollectionReference<Map<String, dynamic>> get _custCol =>
+      _tenRoot.doc(tenantId).collection('customers');
+  static fs.CollectionReference<Map<String, dynamic>> get _depCol =>
+      _tenRoot.doc(tenantId).collection('depletions');
+  static fs.CollectionReference<Map<String, dynamic>> get _usersCol =>
+      _tenRoot.doc(tenantId).collection('users');
+
+  static Future<void> init({required String tenantId}) async {
+    Cloud.tenantId = tenantId;
+  }
+
+  static Future<bool> ensureMembershipForCurrentUser() async {
+    final user = fb_auth.FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+
+    final uidDoc = await _usersCol.doc(user.uid).get();
+    if (uidDoc.exists) return true;
+
+    final email = user.email?.toLowerCase();
+    if (email != null && email.isNotEmpty) {
+      final byMail = await _usersCol.where('email', isEqualTo: email).limit(1).get();
+      if (byMail.docs.isNotEmpty) {
+        final invited = byMail.docs.first;
+        final data = invited.data();
+        final role = (data['role'] as String?) ?? 'member';
+        await _usersCol.doc(user.uid).set({
+          'email': email,
+          'role': role,
+          'uid': user.uid,
+          'createdAt': fs.FieldValue.serverTimestamp(),
+        }, fs.SetOptions(merge: true));
+        await _usersCol.doc(invited.id).delete();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static Future<void> bindLiveListeners() async {
+    _itemsCol.snapshots().listen((qs) {
+      final list = qs.docs.map((d) {
+        final m = d.data();
+        return Item(
+          name: m['name'] ?? d.id,
+          qty: (m['qty'] ?? 0) as int,
+          min: (m['min'] ?? 0) as int,
+          target: (m['target'] ?? 0) as int,
+        );
+      }).toList();
+      items = list;
+      Storage.saveAll();
+    });
+
+    _custCol.snapshots().listen((qs) {
+      final list = qs.docs.map((d) {
+        final m = d.data();
+        return Customer(
+          name: m['name'] as String,
+          date: DateTime.fromMillisecondsSinceEpoch((m['dateMs'] ?? 0) as int),
+          note: m['note'] as String?,
+        );
+      }).toList();
+      customers = list;
+      Storage.saveAll();
+    });
+
+    _depCol.orderBy('timestampMs', descending: false).snapshots().listen((qs) {
+      final temp = <Depletion>[];
+      for (final d in qs.docs) {
+        final m = d.data();
+        final name = m['customerName'] as String;
+        final dateMs = (m['customerDateMs'] ?? 0) as int;
+        final cust = customers.firstWhere(
+          (c) => c.name == name && c.date.millisecondsSinceEpoch == dateMs,
+          orElse: () => Customer(name: name, date: DateTime.fromMillisecondsSinceEpoch(dateMs)),
+        );
+        temp.add(Depletion(
+          itemName: m['itemName'] as String,
+          qty: (m['qty'] ?? 0) as int,
+          customer: cust,
+          timestamp: DateTime.fromMillisecondsSinceEpoch((m['timestampMs'] ?? 0) as int),
+        ));
+      }
+      depletions = temp;
+      Storage.saveAll();
+    });
+  }
+
+  // TEAM
+  static Stream<List<UserMember>> watchMembers() {
+    return _usersCol.orderBy('email').snapshots().map((qs) {
+      return qs.docs.map((d) {
+        final m = d.data();
+        return UserMember(
+          id: d.id,
+          email: (m['email'] as String?) ?? '',
+          role: (m['role'] as String?) ?? 'member',
+          uid: m['uid'] as String?,
+        );
+      }).toList();
+    });
+  }
+
+  static Future<void> addMemberByEmail(String email, {String role = 'member'}) async {
+    final norm = email.toLowerCase();
+    final exist = await _usersCol.where('email', isEqualTo: norm).limit(1).get();
+    if (exist.docs.isNotEmpty) {
+      await _usersCol.doc(exist.docs.first.id).set({
+        'email': norm,
+        'role': role,
+        'updatedAt': fs.FieldValue.serverTimestamp(),
+      }, fs.SetOptions(merge: true));
+      return;
+    }
+    await _usersCol.add({
+      'email': norm,
+      'role': role,
+      'uid': null,
+      'createdAt': fs.FieldValue.serverTimestamp(),
+    });
+  }
+
+  static Future<void> updateMemberRole(String docId, String role) async {
+    await _usersCol.doc(docId).set({
+      'role': role,
+      'updatedAt': fs.FieldValue.serverTimestamp(),
+    }, fs.SetOptions(merge: true));
+  }
+
+  static Future<void> removeMember(String docId) async {
+    await _usersCol.doc(docId).delete();
+  }
+
+  // ITEMS
+  static String _itemId(Item it) => it.name;
+  static Future<void> upsertItem(Item it) async {
+    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
+    await _itemsCol.doc(_itemId(it)).set({
+      'name': it.name,
+      'qty': it.qty,
+      'min': it.min,
+      'target': it.target,
+      'updatedAt': fs.FieldValue.serverTimestamp(),
+      'updatedBy': uid,
+    }, fs.SetOptions(merge: true));
+  }
+  static Future<void> deleteItem(String name) async {
+    await _itemsCol.doc(name).delete();
+  }
+
+  // CUSTOMERS
+  static String customerDocId(Customer c) => '${c.name}|${c.date.millisecondsSinceEpoch}';
+  static Future<void> upsertCustomer(Customer c) async {
+    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
+    await _custCol.doc(customerDocId(c)).set({
+      'name': c.name,
+      'dateMs': c.date.millisecondsSinceEpoch,
+      'note': c.note,
+      'updatedAt': fs.FieldValue.serverTimestamp(),
+      'updatedBy': uid,
+    }, fs.SetOptions(merge: true));
+  }
+  static Future<void> deleteCustomer(Customer c) async {
+    await _custCol.doc(customerDocId(c)).delete();
+  }
+
+  // DEPLETIONS
+  static Future<void> addDepletion(Depletion d) async {
+    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
+    await _depCol.add({
+      'itemName': d.itemName,
+      'qty': d.qty,
+      'customerName': d.customer.name,
+      'customerDateMs': d.customer.date.millisecondsSinceEpoch,
+      'timestampMs': d.timestamp.millisecondsSinceEpoch,
+      'updatedAt': fs.FieldValue.serverTimestamp(),
+      'updatedBy': uid,
+    });
+  }
+}
+
+/// =========================
 ///       CSV / EXPORT
 /// =========================
 
@@ -1190,42 +1814,27 @@ class CsvBuilders {
     return '"$s"';
   }
 
-  /// Inventar inkl. Artikelnummern
   static String buildItemsCsv(List<Item> list) {
-    final rows = <String>[];
-    rows.add(['Name','Bestand','Minimum','Ziel','Status','Artikelnummer'].join(','));
+    final rows = <List<String>>[];
+    rows.add(['Name','Bestand','Minimum','Ziel','Status','Artikelnummer']);
     for (final it in list) {
       final status = it.isLow ? 'ROT' : it.isWarn ? 'GELB' : 'OK';
       final sku = getSkuForItem(it.name) ?? '';
-      rows.add([_esc(it.name), it.qty, it.min, it.target, status, _esc(sku)].join(','));
+      rows.add([it.name, it.qty.toString(), it.min.toString(), it.target.toString(), status, sku]);
     }
-    return rows.join('\n');
+    return _toCsv(rows);
   }
 
-  /// Kunden/Aufmaß (zusammengeführt): Kopf + Materialliste inkl. SKU
   static String buildCustomerMergedCsv({
     required List<Customer> customers,
     required List<Depletion> depletions,
   }) {
-    final rows = <String>[];
+    final rows = <List<String>>[];
     for (final c in customers) {
-      // Kopfzeile
-      rows.add([
-        _esc('Kunde/Auftrag'), _esc(c.name),
-        _esc('Datum'), _esc(_date.format(c.date)),
-        _esc('Notiz'), _esc(c.note ?? ''),
-      ].join(','));
-      rows.add(''); // Leerzeile
+      rows.add(['Kunde/Auftrag', c.name, 'Datum', _date.format(c.date), 'Notiz', c.note ?? '']);
+      rows.add([]);
+      rows.add(['Material/Aufmaß', 'Artikel', 'Stückzahl / Meter', 'Artikelnummer']);
 
-      // Tabellenkopf
-      rows.add([
-        _esc('Material/Aufmaß'),
-        _esc('Artikel'),
-        _esc('Stückzahl / Meter'),
-        _esc('Artikelnummer'),
-      ].join(','));
-
-      // Zuordnen über Name + Datum (wie in der App)
       final taken = depletions.where((d) =>
         d.customer.name == c.name &&
         d.customer.date.millisecondsSinceEpoch == c.date.millisecondsSinceEpoch
@@ -1234,20 +1843,27 @@ class CsvBuilders {
 
       for (final d in taken) {
         final sku = getSkuForItem(d.itemName) ?? '';
-        rows.add([
-          '', // leer lassen, wie gewünscht
-          _esc(d.itemName),
-          _esc('${d.qty}'),
-          _esc(sku),
-        ].join(','));
+        rows.add(['', d.itemName, d.qty.toString(), sku]);
       }
-      rows.add(''); // Leerzeile zwischen Kundenblöcken
+      rows.add([]);
     }
-    return rows.join('\n');
+    return _toCsv(rows);
+  }
+
+  static String _toCsv(List<List<String>> rows) {
+    final sb = StringBuffer();
+    for (final r in rows) {
+      if (r.isEmpty) {
+        sb.write('\r\n');
+        continue;
+      }
+      sb.writeln(r.map(_esc).join(';'));
+    }
+    return sb.toString().replaceAll('\n', '\r\n');
   }
 }
 
-/// schreibt CSV in den Cache und öffnet den Teilen-Dialog
+/// schreibt CSV (UTF-8 BOM + CRLF) und öffnet Teilen
 Future<void> exportCsvFile(
   BuildContext context, {
   required String filename,
@@ -1255,18 +1871,20 @@ Future<void> exportCsvFile(
   bool preferSheets = false,
 }) async {
   try {
+    final normalized = csv.replaceAll('\r\n', '\n').replaceAll('\n', '\r\n');
+    final bytes = <int>[0xEF, 0xBB, 0xBF, ...utf8.encode(normalized)];
+
     final cacheDir = await getTemporaryDirectory();
     final cacheFile = File('${cacheDir.path}/$filename');
-    await cacheFile.writeAsString(csv, flush: true);
+    await cacheFile.writeAsBytes(bytes, flush: true);
 
-    // optional zusätzlich ablegen (leichter mit adb zu ziehen):
     final appDir = await getApplicationDocumentsDirectory();
     final exportsDir = Directory('${appDir.path}/exports');
     if (!await exportsDir.exists()) {
       await exportsDir.create(recursive: true);
     }
     final copyFile = File('${exportsDir.path}/$filename');
-    await copyFile.writeAsString(csv, flush: true);
+    await copyFile.writeAsBytes(bytes, flush: true);
 
     await Share.shareXFiles(
       [XFile(cacheFile.path, mimeType: 'text/csv', name: filename)],
@@ -1278,35 +1896,32 @@ Future<void> exportCsvFile(
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('CSV erzeugt: $filename')));
   } catch (e) {
     // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Export fehlgeschlagen: $e')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Export fehlgeschlagen: $e')),
+    );
   }
 }
 
-/// Baut das CSV für GENAU EINEN Kunden/Auftrag
+/// Baut CSV für EINEN Kunden
 String buildCustomerCsv({
   required String customer,
   required String date,
   String note = '',
   required List<Map<String, String>> items,
 }) {
-  final buffer = StringBuffer();
-
-  buffer.writeln('Kunde/Auftrag:,$customer');
-  buffer.writeln('Datum:,$date');
-  buffer.writeln('Notiz:,$note');
-  buffer.writeln('');
-  buffer.writeln('Material/Aufmaß,Artikel,Stückzahl / Meter,Artikelnummer');
-
+  final rows = <List<String>>[];
+  rows.add(['Kunde/Auftrag:', customer]);
+  rows.add(['Datum:', date]);
+  rows.add(['Notiz:', note]);
+  rows.add([]);
+  rows.add(['Material/Aufmaß','Artikel','Stückzahl / Meter','Artikelnummer']);
   for (var item in items) {
-    buffer.writeln(
-      ',${item['name']},${item['quantity']},${item['sku'] ?? ''}',
-    );
+    rows.add(['', item['name'] ?? '', item['quantity'] ?? '', item['sku'] ?? '']);
   }
-
-  return buffer.toString();
+  return CsvBuilders._toCsv(rows);
 }
 
-/// Exportiert EINEN Auftrag/Kunden als CSV.
+/// Exportiert EINEN Auftrag/Kunden als CSV
 Future<void> exportCustomerCsv(
   BuildContext context, {
   required String customer,
@@ -1321,7 +1936,6 @@ Future<void> exportCustomerCsv(
     note: note,
     items: items,
   );
-
   await exportCsvFile(
     context,
     filename: '${customer}_$date.csv',

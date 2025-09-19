@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "712505442928",
+    "project_id": "van-inventory-16f99",
+    "storage_bucket": "van-inventory-16f99.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:712505442928:android:26c563916a02db7cd76ab5",
+        "android_client_info": {
+          "package_name": "com.example.van_inventory"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDx8l1dK-IXf1BwxdIS_SdyoV6E-rOFNlA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
