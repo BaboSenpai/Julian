@@ -49,6 +49,7 @@ Future<void> main() async {
 
 class VanInventoryApp extends StatelessWidget {
   const VanInventoryApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -58,12 +59,23 @@ class VanInventoryApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: kUseFirebase
-    ? AuthGate(signedIn: const HomeScreen()) // oder dein Widget fürs eingeloggte UI
-    : const HomeScreen(),
-
+          ? StreamBuilder<fb_auth.User?>(
+              stream: fb_auth.FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snap) {
+                // Noch nicht eingeloggt → Login/Registrierung anzeigen
+                if (snap.data == null) {
+                  return const AuthGate(signedIn: false);
+                }
+                // Eingeloggt → direkt deine App anzeigen
+                return const HomeScreen();
+              },
+            )
+          : const HomeScreen(),
     );
   }
 }
+
+
 
 /// =======================
 ///       HOME / TABS
