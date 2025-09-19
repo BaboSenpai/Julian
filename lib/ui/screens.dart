@@ -1,10 +1,10 @@
-// lib/ui/screens.dart
+﻿// lib/ui/screens.dart
 import 'package:flutter/material.dart';
 
 import 'package:van_inventory/models/models.dart';
 import 'package:van_inventory/models/state.dart';
 import 'package:van_inventory/models/storage.dart';
-import 'package:van_inventory/models/csv_export.dart' hide getSkuForItem;
+import 'package:van_inventory/models/csv_export.dart' hide getSkuForItem; // Konflikt vermeiden
 import 'package:van_inventory/services/cloud.dart';
 
 import 'package:van_inventory/models/ui_state.dart'
@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
             DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: activeCustomer == null ? null : customerKey(activeCustomer!),
-                hint: const Text('Kunde wählen'),
+                hint: const Text('Kunde wÃ¤hlen'),
                 alignment: Alignment.centerRight,
                 borderRadius: BorderRadius.circular(12),
                 items: [
@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ...customers
                       .map((c) => DropdownMenuItem<String?>(
                             value: customerKey(c),
-                            child: Text('${c.name} – ${fmtDate(c.date)}'),
+                            child: Text('${c.name} â€“ ${fmtDate(c.date)}'),
                           ))
                       .toList()
                     ..sort((a, b) => ((a.child as Text).data!).compareTo((b.child as Text).data!)),
@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Icon(Icons.person, size: 18),
                 const SizedBox(width: 6),
-                Text('Aktiver Kunde: ${activeCustomer!.name} – ${fmtDate(activeCustomer!.date)}',
+                Text('Aktiver Kunde: ${activeCustomer!.name} â€“ ${fmtDate(activeCustomer!.date)}',
                     style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
             ),
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _ActionCard(icon: Icons.inventory_2, label: 'Inventar', onTap: () => _open(const InventoryScreen())),
               _ActionCard(icon: Icons.list_alt, label: 'Heutige Entnahmen', onTap: () => _open(const TodayDepletionsScreen())),
-              _ActionCard(icon: Icons.receipt_long, label: 'Aufmaß', onTap: () => _open(const AufmassScreen())),
+              _ActionCard(icon: Icons.receipt_long, label: 'AufmaÃŸ', onTap: () => _open(const AufmassScreen())),
               _ActionCard(icon: Icons.settings, label: 'Einstellungen', onTap: () => _open(const SettingsScreen())),
             ],
           ),
@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: Colors.teal.withOpacity(.05), borderRadius: BorderRadius.circular(12)),
-              child: const Text('Alles gut 👍 Keine Artikel unter Minimum.'),
+              child: const Text('Alles gut ðŸ‘ Keine Artikel unter Minimum.'),
             )
           else
             Column(
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     title: Text(it.name),
                     subtitle: Text(
-                      'Bestand: ${it.qty} • Min: ${it.min} • Ziel: ${it.target}',
+                      'Bestand: ${it.qty} â€¢ Min: ${it.min} â€¢ Ziel: ${it.target}',
                       style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                     ),
                     trailing: IconButton(
@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.inventory),
-        label: const Text('Inventar öffnen'),
+        label: const Text('Inventar Ã¶ffnen'),
         onPressed: () => _open(const InventoryScreen()),
       ),
     );
@@ -224,7 +224,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           content: Form(
             key: form,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text('Kunde: ${activeCustomer!.name} – ${fmtDate(activeCustomer!.date)}'),
+              Text('Kunde: ${activeCustomer!.name} â€“ ${fmtDate(activeCustomer!.date)}'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: qtyCtrl,
@@ -269,7 +269,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               timestamp: DateTime.now(),
               category: 'material',
               action: 'Entnahme gebucht',
-              details: '${item.name}: $before → ${item.qty} (−$taken) für ${activeCustomer!.name}',
+              details: '${item.name}: $before â†’ ${item.qty} (âˆ’$taken) fÃ¼r ${activeCustomer!.name}',
             ));
           }
         });
@@ -277,7 +277,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
         if (taken < req) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Nur $taken Stück entnommen (Bestand war zu niedrig).')),
+            SnackBar(content: Text('Nur $taken StÃ¼ck entnommen (Bestand war zu niedrig).')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -318,7 +318,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 DropdownButtonFormField<Customer>(
                   value: chosenCustomer,
                   decoration: const InputDecoration(labelText: 'Kunde/Auftrag (vorhanden)'),
-                  items: customers.map((c) => DropdownMenuItem(value: c, child: Text('${c.name} – ${fmtDate(c.date)}'))).toList(),
+                  items: customers.map((c) => DropdownMenuItem(value: c, child: Text('${c.name} â€“ ${fmtDate(c.date)}'))).toList(),
                   onChanged: (v) => setSB(() => chosenCustomer = v),
                 ),
               const SizedBox(height: 8),
@@ -327,12 +327,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   controller: newNameCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Neuer Kunde/Auftrag (optional)',
-                    hintText: 'z. B. Müller GmbH – Bad',
+                    hintText: 'z. B. MÃ¼ller GmbH â€“ Bad',
                   ),
                 )),
                 const SizedBox(width: 8),
                 IconButton(
-                  tooltip: 'Datum wählen',
+                  tooltip: 'Datum wÃ¤hlen',
                   onPressed: () async {
                     final d = await _pickDate(context, newDate);
                     if (d != null) setSB(() => newDate = d);
@@ -345,7 +345,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 child: Text('Datum: ${fmtDate(newDate)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ),
               const SizedBox(height: 6),
-              const Text('Entweder vorhandenen Kunden wählen ODER neuen Namen + Datum eintragen.',
+              const Text('Entweder vorhandenen Kunden wÃ¤hlen ODER neuen Namen + Datum eintragen.',
                 style: TextStyle(fontSize: 12)),
             ]),
           ),
@@ -356,7 +356,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 if (!form.currentState!.validate()) return;
                 if (chosenCustomer == null && newNameCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bitte Kunde wählen oder neu anlegen')),
+                    const SnackBar(content: Text('Bitte Kunde wÃ¤hlen oder neu anlegen')),
                   );
                   return;
                 }
@@ -373,11 +373,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final req = int.parse(qtyCtrl.text);
       Customer cust;
       if (newNameCtrl.text.trim().isNotEmpty) {
-        cust = Customer(name: newNameCtrl.text.trim(), date: newDate, note: null);
+        cust = Customer(
+
+          name: newNameCtrl.text.trim(),
+          date: newDate,
+          note: null,
+        );
         customers.add(cust);
         changelog.insert(0, ChangeLogEntry(
           timestamp: DateTime.now(), category: 'customer', action: 'Kunde angelegt',
-          details: '${cust.name} – ${fmtDate(cust.date)}',
+          details: '${cust.name} â€“ ${fmtDate(cust.date)}',
         ));
       } else {
         cust = chosenCustomer!;
@@ -391,7 +396,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           depletions.add(Depletion(itemName: item.name, qty: taken, customer: cust, timestamp: DateTime.now()));
           changelog.insert(0, ChangeLogEntry(
             timestamp: DateTime.now(), category: 'material', action: 'Entnahme gebucht',
-            details: '${item.name}: $before → ${item.qty} (−$taken) für ${cust.name}',
+            details: '${item.name}: $before â†’ ${item.qty} (âˆ’$taken) fÃ¼r ${cust.name}',
           ));
         }
       });
@@ -399,7 +404,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
       if (taken < req) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nur $taken Stück entnommen (Bestand war zu niedrig).')),
+          SnackBar(content: Text('Nur $taken StÃ¼ck entnommen (Bestand war zu niedrig).')),
         );
       }
     }
@@ -416,7 +421,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Neuen Artikel hinzufügen'),
+        title: const Text('Neuen Artikel hinzufÃ¼gen'),
         content: Form(
           key: form,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -445,12 +450,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (!form.currentState!.validate()) return;
               final minVal = int.parse(min.text), tgtVal = int.parse(tgt.text);
               if (tgtVal < minVal) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ≥ Minimum sein')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss â‰¥ Minimum sein')));
                 return;
               }
               Navigator.pop(ctx, true);
             },
-            child: const Text('Hinzufügen'),
+            child: const Text('HinzufÃ¼gen'),
           ),
         ],
       ),
@@ -473,7 +478,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         details: '${it.name} (qty=${it.qty}, min=${it.min}, target=${it.target})',
       ));
       await Storage.saveAll();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('„${it.name}“ hinzugefügt')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('â€ž${it.name}â€œ hinzugefÃ¼gt')));
     }
   }
 
@@ -518,7 +523,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (!form.currentState!.validate()) return;
               final minVal = int.parse(min.text), tgtVal = int.parse(tgt.text);
               if (tgtVal < minVal) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ≥ Minimum sein')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss â‰¥ Minimum sein')));
                 return;
               }
               Navigator.pop(ctx, true);
@@ -550,10 +555,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       await setSkuForItem(newName, newSku.isEmpty ? null : newSku);
 
       final changes = <String>[];
-      if (before.name   != item.name)   changes.add('Name: ${before.name} → ${item.name}');
-      if (before.qty    != item.qty)    changes.add('qty: ${before.qty} → ${item.qty}');
-      if (before.min    != item.min)    changes.add('min: ${before.min} → ${item.min}');
-      if (before.target != item.target) changes.add('target: ${before.target} → ${item.target}');
+      if (before.name   != item.name)   changes.add('Name: ${before.name} â†’ ${item.name}');
+      if (before.qty    != item.qty)    changes.add('qty: ${before.qty} â†’ ${item.qty}');
+      if (before.min    != item.min)    changes.add('min: ${before.min} â†’ ${item.min}');
+      if (before.target != item.target) changes.add('target: ${before.target} â†’ ${item.target}');
       changelog.insert(0, ChangeLogEntry(
         timestamp: DateTime.now(), category: 'material', action: 'Artikel bearbeitet',
         details: '${before.name}: ${changes.join(', ')}',
@@ -566,11 +571,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Artikel löschen?'),
-        content: Text('„${item.name}“ wirklich löschen?'),
+        title: const Text('Artikel lÃ¶schen?'),
+        content: Text('â€ž${item.name}â€œ wirklich lÃ¶schen?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Löschen')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃ¶schen')),
         ],
       ),
     );
@@ -578,7 +583,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       setState(() => items.remove(item));
       await setSkuForItem(item.name, null);
       changelog.insert(0, ChangeLogEntry(
-        timestamp: DateTime.now(), category: 'material', action: 'Artikel gelöscht', details: item.name,
+        timestamp: DateTime.now(), category: 'material', action: 'Artikel gelÃ¶scht', details: item.name,
       ));
       await Storage.saveAll();
     }
@@ -601,7 +606,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Suche Artikel…',
+                hintText: 'Suche Artikelâ€¦',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -638,25 +643,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   title: Text(item.name),
                   subtitle: Text(
-                    '${item.qty} Stk • Min: ${item.min} • Ziel: ${item.target}'
-                    '${item.isLow ? '  •  Nachfüllen!' : item.isWarn ? "  •  Achtung" : ''}'
-                    '${sku == null ? '' : '  •  SKU: $sku'}',
+                    '${item.qty} Stk â€¢ Min: ${item.min} â€¢ Ziel: ${item.target}'
+                    '${item.isLow ? '  â€¢  NachfÃ¼llen!' : item.isWarn ? "  â€¢  Achtung" : ''}'
+                    '${sku == null ? '' : '  â€¢  SKU: $sku'}',
                     style: subStyle,
                   ),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     IconButton(
-                      tooltip: 'Entnehmen (−)',
+                      tooltip: 'Entnehmen (âˆ’)',
                       onPressed: item.qty == 0 ? null : () => _logDepletionDialog(item),
                       icon: const Icon(Icons.remove_circle_outline),
                     ),
                     IconButton(
-                      tooltip: 'Auffüllen (+1)',
+                      tooltip: 'AuffÃ¼llen (+1)',
                       onPressed: () async {
                         final before = item.qty;
                         setState(() => item.qty++);
                         changelog.insert(0, ChangeLogEntry(
-                          timestamp: DateTime.now(), category: 'material', action: 'Bestand geändert',
-                          details: '${item.name}: $before → ${item.qty} (+1)',
+                          timestamp: DateTime.now(), category: 'material', action: 'Bestand geÃ¤ndert',
+                          details: '${item.name}: $before â†’ ${item.qty} (+1)',
                         ));
                         await Storage.saveAll();
                       },
@@ -669,7 +674,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       },
                       itemBuilder: (_) => const [
                         PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                        PopupMenuItem(value: 'delete', child: Text('Löschen')),
+                        PopupMenuItem(value: 'delete', child: Text('LÃ¶schen')),
                       ],
                     ),
                   ]),
@@ -709,7 +714,7 @@ class TodayDepletionsScreen extends StatelessWidget {
                 return ListTile(
                   leading: const Icon(Icons.remove_circle_outline, color: Colors.red),
                   title: Text(e.itemName),
-                  subtitle: Text('−${e.qty} • $hh:$mm Uhr • ${e.customer.name} (${fmtDate(e.customer.date)})'),
+                  subtitle: Text('âˆ’${e.qty} â€¢ $hh:$mm Uhr â€¢ ${e.customer.name} (${fmtDate(e.customer.date)})'),
                 );
               },
             ),
@@ -735,8 +740,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         appBar: AppBar(
           title: const Text('Einstellungen'),
           bottom: const TabBar(tabs: [
-            Tab(text: 'Änderungen – Material'),
-            Tab(text: 'Änderungen – Kunden'),
+            Tab(text: 'Ã„nderungen â€“ Material'),
+            Tab(text: 'Ã„nderungen â€“ Kunden'),
             Tab(text: 'Export'),
           ]),
         ),
@@ -762,7 +767,7 @@ class _ChangeLogList extends StatelessWidget {
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     if (entries.isEmpty) {
-      return const Center(child: Text('Noch keine Änderungen protokolliert'));
+      return const Center(child: Text('Noch keine Ã„nderungen protokolliert'));
     }
 
     return ListView.separated(
@@ -776,7 +781,7 @@ class _ChangeLogList extends StatelessWidget {
         return ListTile(
           leading: Icon(category == 'material' ? Icons.inventory_2 : Icons.person),
           title: Text(e.action),
-          subtitle: Text('${e.details}\n${fmtDate(e.timestamp)} • $hh:$mm'),
+          subtitle: Text('${e.details}\n${fmtDate(e.timestamp)} â€¢ $hh:$mm'),
           isThreeLine: true,
         );
       },
@@ -798,9 +803,9 @@ class _ExportTab extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text('Export: $title'),
         content: const Text(
-          'Wohin möchtest du exportieren?\n'
-          '• Excel: Öffnet/teilt die CSV mit Excel\n'
-          '• Google Sheets: Teilt die CSV zur Sheets-App/Drive'
+          'Wohin mÃ¶chtest du exportieren?\n'
+          'â€¢ Excel: Ã–ffnet/teilt die CSV mit Excel\n'
+          'â€¢ Google Sheets: Teilt die CSV zur Sheets-App/Drive'
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Abbrechen')),
@@ -837,11 +842,11 @@ class _ExportTab extends StatelessWidget {
 
         _ExportTile(
           icon: Icons.receipt_long,
-          title: 'Kunden/Aufmaß (zusammengeführt)',
-          subtitle: 'Kopf: Kunde/Datum/Notiz • Liste: Artikel, Menge, SKU',
+          title: 'Kunden/AufmaÃŸ (zusammengefÃ¼hrt)',
+          subtitle: 'Kopf: Kunde/Datum/Notiz â€¢ Liste: Artikel, Menge, SKU',
           onTap: () => _confirmAndExport(
             context,
-            title: 'Kunden/Aufmaß',
+            title: 'Kunden/AufmaÃŸ',
             filename: 'kunden_aufmass.csv',
             buildCsv: () async => CsvBuilders.buildCustomerMergedCsv(
               customers: customers,
@@ -852,8 +857,8 @@ class _ExportTab extends StatelessWidget {
 
         const SizedBox(height: 16),
         const Text(
-          'Hinweis: CSV lässt sich in Excel und Google Sheets direkt öffnen. '
-          'Für Google Sheets wird die Datei geteilt – wähle dort „Sheets“ bzw. „Drive/Speichern in Drive“.',
+          'Hinweis: CSV lÃ¤sst sich in Excel und Google Sheets direkt Ã¶ffnen. '
+          'FÃ¼r Google Sheets wird die Datei geteilt â€“ wÃ¤hle dort â€žSheetsâ€œ bzw. â€žDrive/Speichern in Driveâ€œ.',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
@@ -877,3 +882,254 @@ class _ExportTile extends StatelessWidget {
     );
   }
 }
+
+/// ===================================================
+///               AUFMASS / KUNDEN
+/// ===================================================
+class AufmassScreen extends StatefulWidget {
+  const AufmassScreen({super.key});
+  @override
+  State<AufmassScreen> createState() => _AufmassScreenState();
+}
+
+class _AufmassScreenState extends State<AufmassScreen> {
+  Map<Customer, List<Depletion>> _groupByCustomer() {
+    final map = <Customer, List<Depletion>>{};
+    for (final d in depletions) {
+      final c = d.customer;
+      map.putIfAbsent(c, () => <Depletion>[]).add(d);
+    }
+    for (final list in map.values) {
+      list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    }
+    return map;
+  }
+
+  Future<void> _createOrEditCustomer({Customer? existing}) async {
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    DateTime date = existing?.date ?? DateTime.now();
+    final noteCtrl = TextEditingController(text: existing?.note ?? '');
+    final form = GlobalKey<FormState>();
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSB) => AlertDialog(
+          title: Text(existing == null ? 'Kunde/Auftrag anlegen' : 'Kunde bearbeiten'),
+          content: Form(
+            key: form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Name des Kunden/Auftrags'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Pflichtfeld' : null,
+                ),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(child: Text('Datum: ${fmtDate(date)}')),
+                  IconButton(
+                    icon: const Icon(Icons.event),
+                    tooltip: 'Datum wÃ¤hlen',
+                    onPressed: () async {
+                      final d = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (d != null) setSB(() => date = d);
+                    },
+                  ),
+                ]),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: noteCtrl,
+                  decoration: const InputDecoration(labelText: 'Notiz'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
+            ElevatedButton(
+              onPressed: () {
+                if (form.currentState!.validate()) Navigator.pop(ctx, true);
+              },
+              child: const Text('Speichern'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (ok == true) {
+      setState(() {
+        if (existing == null) {
+          final newCust = Customer(
+
+            name: nameCtrl.text.trim(),
+            date: date,
+            note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
+          );
+          customers.add(newCust);
+        } else {
+          final idx = customers.indexOf(existing);
+          if (idx >= 0) {
+            customers[idx] = Customer(
+
+              name: nameCtrl.text.trim(),
+              date: date,
+              note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
+            );
+          }
+        }
+      });
+      await Storage.saveAll();
+    }
+  }
+
+  Future<void> _deleteCustomer(Customer cust) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('LÃ¶schen'),
+        content: Text(
+          'Kunde/Auftrag â€ž${cust.name}â€œ wirklich lÃ¶schen?\n'
+          'Die Entnahmen bleiben bestehen (als verwaiste EintrÃ¤ge).',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃ¶schen')),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      setState(() {
+        customers.remove(cust);
+      });
+      await Storage.saveAll();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final grouped = _groupByCustomer();
+
+    final keys = [...grouped.keys]..sort((a, b) {
+      final byDate = b.date.compareTo(a.date);
+      if (byDate != 0) return byDate;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('AufmaÃŸ = Kunden/AuftrÃ¤ge')),
+      body: grouped.isEmpty
+          ? const Center(child: Text('Noch keine Kunden/AuftrÃ¤ge angelegt'))
+          : ListView.builder(
+              itemCount: keys.length,
+              itemBuilder: (c, i) {
+                final cust = keys[i];
+                final list = grouped[cust] ?? <Depletion>[];
+
+                return Card(
+                  margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  child: ExpansionTile(
+                    leading: const Icon(Icons.person),
+                    title: Text(cust.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text('${fmtDate(cust.date)}\n${cust.note ?? ''}'),
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (v) {
+                        if (v == 'edit') _createOrEditCustomer(existing: cust);
+                        if (v == 'delete') _deleteCustomer(cust);
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
+                        PopupMenuItem(value: 'delete', child: Text('LÃ¶schen')),
+                      ],
+                    ),
+                    children: [
+                      if (list.isEmpty)
+                        const ListTile(title: Text('Noch keine Entnahmen fÃ¼r diesen Kunden.'))
+                      else
+                        ...list.map((e) {
+                          final t = TimeOfDay.fromDateTime(e.timestamp);
+                          final hh = t.hour.toString().padLeft(2, '0');
+                          final mm = t.minute.toString().padLeft(2, '0');
+                          final sku = getSkuForItem(e.itemName);
+                          return ListTile(
+                            leading: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                            title: Text(e.itemName),
+                            subtitle: Text(
+                              '${e.qty} Stk Â· $hh:$mm Uhr, ${fmtDate(e.timestamp)}'
+                              '${sku == null ? '' : ' Â· SKU: $sku'}',
+                            ),
+                          );
+                        }).toList(),
+
+                      // Export-Button NUR fÃ¼r diesen Kunden/Auftrag
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.download),
+                          label: const Text('AufmaÃŸ exportieren'),
+                          onPressed: () async {
+                            final itemsList = list
+                                .map((d) => {
+                                      'name': d.itemName,
+                                      'quantity': d.qty.toString(),
+                                      'sku': getSkuForItem(d.itemName) ?? '',
+                                    })
+                                .toList();
+
+                            // CSV fÃ¼r EINEN Kunden bauen (Semikolon + CRLF)
+                            String _buildSingleCustomerCsv({
+                              required String customer,
+                              required DateTime date,
+                              String note = '',
+                              required List<Map<String, String>> items,
+                            }) {
+                              String esc(String v) => '"${v.replaceAll('"', '""')}"';
+                              final buf = StringBuffer();
+                              buf.writeln('${esc('Kunde/Auftrag:')};${esc(customer)}');
+                              buf.writeln('${esc('Datum:')};${esc(fmtDate(date))}');
+                              buf.writeln('${esc('Notiz:')};${esc(note)}');
+                              buf.writeln('');
+                              buf.writeln('${esc('Material/AufmaÃŸ')};${esc('Artikel')};${esc('StÃ¼ckzahl / Meter')};${esc('Artikelnummer')}');
+                              for (final it in items) {
+                                buf.writeln('${esc('')};${esc(it['name'] ?? '')};${esc(it['quantity'] ?? '')};${esc(it['sku'] ?? '')}');
+                              }
+                              return buf.toString().replaceAll('\n', '\r\n');
+                            }
+
+                            final csv = _buildSingleCustomerCsv(
+                              customer: cust.name,
+                              date: cust.date,
+                              note: cust.note ?? '',
+                              items: itemsList,
+                            );
+
+                            await exportCsvFile(
+                              context,
+                              filename: '${cust.name}_${cust.date.toIso8601String()}.csv',
+                              csv: csv,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.person_add),
+        label: const Text('Kunde/Auftrag anlegen'),
+        onPressed: () => _createOrEditCustomer(),
+      ),
+    );
+  }
+}
+
