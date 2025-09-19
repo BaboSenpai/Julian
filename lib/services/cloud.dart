@@ -1,237 +1,261 @@
-//lib/services/cloud.dart
+// lib/services/cloud.dart
+//
+// Firebase Cloud-Sync für van_inventory
+// - Lädt Items, Customers, Depletions aus Firestore und spiegelt sie in die
+//   globalen Listen (items, customers, depletions) aus state.dart.
+// - Bietet Team-/Benutzerverwaltung (watchMembers, add/update/remove).
+//
+// Voraussetzungen:
+//   - Firebase ist in main.dart initialisiert (Firebase.initializeApp)
+//   - Es gibt Collections unter:
+//       tenants/{tenantId}/items
+//       tenants/{tenantId}/customers
+//       tenants/{tenantId}/depletions
+//       tenants/{tenantId}/members
+//
+// WICHTIG: Die globalen Listen sind "final" -> niemals neu zuweisen,
+//          sondern immer mit ..clear() ..addAll(...) befüllen.
+
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
-// alle Models (Item, Customer, Depletion, UserMember)
 import 'package:van_inventory/models/models.dart';
-
-// globale Listen/State (items, customers, depletions, teamMembers)
 import 'package:van_inventory/models/state.dart';
-
-// Hive-Storage (liegt bei dir unter models/)
-import 'package:van_inventory/models/storage.dart';
-
-
-
 
 class Cloud {
   Cloud._();
-  static fs.FirebaseFirestore get _db => fs.FirebaseFirestore.instance;
 
-  static late String tenantId;
-  static fs.CollectionReference<Map<String, dynamic>> get _tenRoot =>
-      _db.collection('tenants');
+  static late final fs.FirebaseFirestore _db;
+  static String _tenantId = 'default';
 
-  static fs.CollectionReference<Map<String, dynamic>> get _itemsCol =>
-      _tenRoot.doc(tenantId).collection('items');
+  // optionale aktive Bindings (damit man sie bei Bedarf wieder kündigen kann)
+  static StreamSubscription? _itemsBind;
+  static StreamSubscription? _customersBind;
+  static StreamSubscription? _depletionsBind;
 
-  static fs.CollectionReference<Map<String, dynamic>> get _custCol =>
-      _tenRoot.doc(tenantId).collection('customers');
-
-  static fs.CollectionReference<Map<String, dynamic>> get _depCol =>
-      _tenRoot.doc(tenantId).collection('depletions');
-
-  static fs.CollectionReference<Map<String, dynamic>> get _usersCol =>
-      _tenRoot.doc(tenantId).collection('users');
-
-  static fs.CollectionReference<Map<String, dynamic>> get _logCol =>
-      _tenRoot.doc(tenantId).collection('changelog');
-
-  /// einmalig beim App-Start im Firebase-Modus
+  /// Einmalig aufrufen (nach Firebase.initializeApp), z. B. in main():
+  ///   await Cloud.init(tenantId: 'van1');
   static Future<void> init({required String tenantId}) async {
-    Cloud.tenantId = tenantId;
+    _tenantId = tenantId;
+    _db = fs.FirebaseFirestore.instance;
+
+    // Live-Bindings starten (optional – wenn du das nicht willst, auskommentieren)
+    _bindItems();
+    _bindCustomers();
+    _bindDepletions();
   }
 
-  /// Stellt sicher, dass der eingeloggte Nutzer Mitglied des Teams ist.
-  /// Falls es einen Eintrag mit derselben E-Mail gibt, wird dessen `uid` gesetzt.
-  static Future<bool> ensureMembershipForCurrentUser() async {
-    final user = fb_auth.FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
+  // ---------- Public Streams / Team ----------
 
-    // 1) Direkter Treffer via UID?
-    final uidDoc = await _usersCol.doc(user.uid).get();
-    if (uidDoc.exists) return true;
-
-    // 2) Suche per Email
-    final email = user.email?.toLowerCase();
-    if (email != null && email.isNotEmpty) {
-      final byMail = await _usersCol.where('email', isEqualTo: email).limit(1).get();
-      if (byMail.docs.isNotEmpty) {
-        // Migrate: setze Doc-ID = uid und übertrage Daten
-        final invited = byMail.docs.first;
-        final data = invited.data();
-        final role = (data['role'] as String?) ?? 'member';
-        await _usersCol.doc(user.uid).set({
-          'email': email,
-          'role': role,
-          'uid': user.uid,
-          'createdAt': fs.FieldValue.serverTimestamp(),
-        }, fs.SetOptions(merge: true));
-        await _usersCol.doc(invited.id).delete();
-        return true;
-      }
-    }
-
-    // 3) Kein Eintrag vorhanden -> kein Zugang
-    return false;
-  }
-
-  /// Live-Listener binden: Firestore -> In-Memory + Hive speichern
-  static StreamSubscription? _itemsSub;
-  static StreamSubscription? _custSub;
-  static StreamSubscription? _depSub;
-
-  static Future<void> bindLiveListeners() async {
-    // Items
-    _itemsSub?.cancel();
-    _itemsSub = _itemsCol.snapshots().listen((qs) {
-      final list = qs.docs.map((d) {
-        final m = d.data();
-        return Item(
-          name: m['name'] ?? d.id,
-          qty: (m['qty'] ?? 0) as int,
-          min: (m['min'] ?? 0) as int,
-          target: (m['target'] ?? 0) as int,
-        );
-      }).toList();
-      items = list;
-      Storage.saveAll();
-    });
-
-    // Customers
-    _custSub?.cancel();
-    _custSub = _custCol.snapshots().listen((qs) {
-      final list = qs.docs.map((d) {
-        final m = d.data();
-        return Customer(
-          name: m['name'] as String,
-          date: DateTime.fromMillisecondsSinceEpoch((m['dateMs'] ?? 0) as int),
-          note: m['note'] as String?,
-        );
-      }).toList();
-      customers = list;
-      Storage.saveAll();
-    });
-
-    // Depletions
-    _depSub?.cancel();
-    _depSub = _depCol.orderBy('timestampMs', descending: false).snapshots().listen((qs) {
-      final temp = <Depletion>[];
-      for (final d in qs.docs) {
-        final m = d.data();
-        final name = m['customerName'] as String;
-        final dateMs = (m['customerDateMs'] ?? 0) as int;
-        final cust = customers.firstWhere(
-          (c) => c.name == name && c.date.millisecondsSinceEpoch == dateMs,
-          orElse: () => Customer(name: name, date: DateTime.fromMillisecondsSinceEpoch(dateMs)),
-        );
-        temp.add(Depletion(
-          itemName: m['itemName'] as String,
-          qty: (m['qty'] ?? 0) as int,
-          customer: cust,
-          timestamp: DateTime.fromMillisecondsSinceEpoch((m['timestampMs'] ?? 0) as int),
-        ));
-      }
-      depletions = temp;
-      Storage.saveAll();
-    });
-  }
-
-  /// ============ TEAM ============
+  /// Stream der Team-Mitglieder (für TeamTab)
   static Stream<List<UserMember>> watchMembers() {
-    return _usersCol.orderBy('email').snapshots().map((qs) {
-      return qs.docs.map((d) {
+    final col = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('members')
+        .orderBy('email');
+
+    return col.snapshots().map((snap) {
+      return snap.docs.map((d) {
         final m = d.data();
         return UserMember(
           id: d.id,
-          email: (m['email'] as String?) ?? '',
-          role: (m['role'] as String?) ?? 'member',
-          uid: m['uid'] as String?,
+          email: (m['email'] ?? '').toString(),
+          role: (m['role'] ?? 'member').toString(),
+          displayName: (m['displayName'] ?? '').toString(),
         );
       }).toList();
     });
   }
 
+  /// Rolle eines Mitglieds ändern (z. B. 'member' <-> 'admin')
+  static Future<void> updateMemberRole(String memberId, String role) async {
+    final ref = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('members')
+        .doc(memberId);
+    await ref.update({'role': role});
+  }
+
+  /// Mitglied entfernen
+  static Future<void> removeMember(String memberId) async {
+    final ref = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('members')
+        .doc(memberId);
+    await ref.delete();
+  }
+
+  /// Mitglied per E-Mail hinzufügen (falls bereits vorhanden -> upsert)
   static Future<void> addMemberByEmail(String email, {String role = 'member'}) async {
-    final norm = email.toLowerCase();
-    final exist = await _usersCol.where('email', isEqualTo: norm).limit(1).get();
-    if (exist.docs.isNotEmpty) {
-      await _usersCol.doc(exist.docs.first.id).set({
-        'email': norm,
-        'role': role,
-        'updatedAt': fs.FieldValue.serverTimestamp(),
-      }, fs.SetOptions(merge: true));
+    final col = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('members');
+
+    // nach existierendem Member mit gleicher E-Mail suchen
+    final q = await col.where('email', isEqualTo: email).limit(1).get();
+    if (q.docs.isNotEmpty) {
+      // update Rolle
+      await q.docs.first.reference.update({'role': role});
       return;
     }
-    await _usersCol.add({
-      'email': norm,
+
+    // neu anlegen
+    await col.add({
+      'email': email,
       'role': role,
-      'uid': null,
+      'displayName': '',
       'createdAt': fs.FieldValue.serverTimestamp(),
+      'invitedBy': fb_auth.FirebaseAuth.instance.currentUser?.email ?? '',
     });
   }
 
-  static Future<void> updateMemberRole(String docId, String role) async {
-    await _usersCol.doc(docId).set({
-      'role': role,
-      'updatedAt': fs.FieldValue.serverTimestamp(),
-    }, fs.SetOptions(merge: true));
-  }
+  // ---------- Live-Bindings für Items / Customers / Depletions ----------
 
-  static Future<void> removeMember(String docId) async {
-    await _usersCol.doc(docId).delete();
-  }
+  static void _bindItems() {
+    _itemsBind?.cancel();
+    final col = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('items');
 
-  /// ============ ITEMS ============
-  static String _itemId(Item it) => it.name; // ID = Item-Name
+    _itemsBind = col.snapshots().listen((snap) {
+      final list = snap.docs.map((d) {
+        final m = d.data();
+        return _mapItem(d.id, m);
+      }).toList();
 
-  static Future<void> upsertItem(Item it) async {
-    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
-    await _itemsCol.doc(_itemId(it)).set({
-      'name': it.name,
-      'qty': it.qty,
-      'min': it.min,
-      'target': it.target,
-      'updatedAt': fs.FieldValue.serverTimestamp(),
-      'updatedBy': uid,
-    }, fs.SetOptions(merge: true));
-  }
-
-  static Future<void> deleteItem(String name) async {
-    await _itemsCol.doc(name).delete();
-  }
-
-  /// ============ CUSTOMERS ============
-  static String customerDocId(Customer c) =>
-      '${c.name}|${c.date.millisecondsSinceEpoch}';
-
-  static Future<void> upsertCustomer(Customer c) async {
-    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
-    await _custCol.doc(customerDocId(c)).set({
-      'name': c.name,
-      'dateMs': c.date.millisecondsSinceEpoch,
-      'note': c.note,
-      'updatedAt': fs.FieldValue.serverTimestamp(),
-      'updatedBy': uid,
-    }, fs.SetOptions(merge: true));
-  }
-
-  static Future<void> deleteCustomer(Customer c) async {
-    await _custCol.doc(customerDocId(c)).delete();
-  }
-
-  /// ============ DEPLETIONS ============
-  static Future<void> addDepletion(Depletion d) async {
-    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
-    await _depCol.add({
-      'itemName': d.itemName,
-      'qty': d.qty,
-      'customerName': d.customer.name,
-      'customerDateMs': d.customer.date.millisecondsSinceEpoch,
-      'timestampMs': d.timestamp.millisecondsSinceEpoch,
-      'updatedAt': fs.FieldValue.serverTimestamp(),
-      'updatedBy': uid,
+      items
+        ..clear()
+        ..addAll(list);
     });
+  }
+
+  static void _bindCustomers() {
+    _customersBind?.cancel();
+    final col = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('customers')
+        .orderBy('date', descending: true);
+
+    _customersBind = col.snapshots().listen((snap) {
+      final list = snap.docs.map((d) {
+        final m = d.data();
+        return _mapCustomer(m);
+      }).toList();
+
+      customers
+        ..clear()
+        ..addAll(list);
+    });
+  }
+
+  static void _bindDepletions() {
+    _depletionsBind?.cancel();
+    final col = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('depletions')
+        .orderBy('date', descending: true);
+
+    _depletionsBind = col.snapshots().listen((snap) {
+      final temp = <Depletion>[];
+      for (final d in snap.docs) {
+        final m = d.data();
+
+        // Customer via Name zuordnen (da euer Customer kein id-Feld hat)
+        Customer cust = _mapCustomerFromName(m['customerName']);
+
+        try {
+          temp.add(Depletion.fromMap(_ensureMap(m), cust));
+        } catch (_) {
+          // falls Format nicht passt -> Eintrag überspringen
+        }
+      }
+
+      depletions
+        ..clear()
+        ..addAll(temp);
+    });
+  }
+
+  // ---------- Mapper ----------
+
+  static Item _mapItem(String docId, Map<String, dynamic> m) {
+    // Robust gegen Strings/Zahlen
+    int _asInt(dynamic v) =>
+        (v is int) ? v : int.tryParse(v?.toString() ?? '0') ?? 0;
+
+    return Item(
+      id: (m['id']?.toString().isNotEmpty ?? false) ? m['id'].toString() : docId,
+      name: (m['name'] ?? '').toString(),
+      qty: _asInt(m['qty']),
+      min: _asInt(m['min']),
+      target: _asInt(m['target']),
+      note: (m['note']?.toString().isNotEmpty ?? false) ? m['note'].toString() : null,
+      createdAt: _toDateTime(m['createdAt']),
+    );
+  }
+
+  static Customer _mapCustomer(Map<String, dynamic> m) {
+    return Customer(
+      name: (m['name'] ?? m['customerName'] ?? '').toString(),
+      date: _toDateTime(m['date']),
+      note: (m['note']?.toString().isNotEmpty ?? false) ? m['note'].toString() : null,
+    );
+  }
+
+  static Customer _mapCustomerFromName(dynamic name) {
+    final n = (name ?? '').toString();
+    if (n.isNotEmpty) {
+      // Versuch: exakten Treffer in bereits geladenen Kunden finden
+      final idx = customers.indexWhere((c) => c.name == n);
+      if (idx >= 0) return customers[idx];
+    }
+    // Fallback: vorhandener erster Kunde – oder Dummy
+    return customers.isNotEmpty
+        ? customers.first
+        : Customer(name: n.isEmpty ? 'Unbekannt' : n, date: DateTime.now(), note: null);
+  }
+
+  static DateTime _toDateTime(dynamic v) {
+    if (v == null) return DateTime.now();
+    // Firestore Timestamp?
+    if (v is fs.Timestamp) return v.toDate();
+    // Milliseconds?
+    final i = int.tryParse(v.toString());
+    if (i != null) {
+      try {
+        return DateTime.fromMillisecondsSinceEpoch(i);
+      } catch (_) {}
+    }
+    // ISO-String?
+    try {
+      return DateTime.parse(v.toString());
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
+  static Map<String, dynamic> _ensureMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return <String, dynamic>{};
+  }
+
+  // ---------- Optional: Manuelles Entbinden ----------
+
+  static Future<void> dispose() async {
+    await _itemsBind?.cancel();
+    await _customersBind?.cancel();
+    await _depletionsBind?.cancel();
+    _itemsBind = null;
+    _customersBind = null;
+    _depletionsBind = null;
   }
 }

@@ -3,6 +3,11 @@ import 'package:intl/intl.dart';
 import 'models.dart';
 import 'storage.dart';
 
+// Fallback-Mapping: aktuell keine SKUs -> immer null zurückgeben.
+// (Später könnt ihr hier eine echte Zuordnung pflegen.)
+String? getSkuForItem(String name) => null;
+
+
 class CsvBuilders {
   static final _date = DateFormat('dd.MM.yyyy');
 

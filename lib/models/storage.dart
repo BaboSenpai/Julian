@@ -84,36 +84,41 @@ class Storage {
       ..addAll(loadedCustomers);
 
     // ---- Depletions ----
-    // Je nach altem Datenformat kann Depletion einen Customer benötigen.
-    // Wir versuchen, über eine customerId aufzulösen; falls nicht vorhanden,
-    // fällt es auf einen Dummy-Fallback zurück.
+    // Wir versuchen, den Customer über Namen zu matchen (bei dir gibt es kein Customer.id).
     final deplList = (box.get('depletions') as List?) ?? const <dynamic>[];
     final List<Depletion> loadedDepletions = <Depletion>[];
 
     for (final raw in deplList.whereType<dynamic>()) {
       final map = Map<String, dynamic>.from(raw as Map);
 
-      // Versuch: Customer per ID auflösen
+      // Versuch: Customer per Name auflösen
       Customer? cust;
-      final custId = map['customerId']?.toString();
-      if (custId != null) {
-        cust = customers.where((c) => c.id == custId).cast<Customer?>().firstOrNull;
+      final custName = map['customerName']?.toString();
+      if (custName != null) {
+        cust = customers.firstWhere(
+          (c) => c.name == custName,
+          orElse: () => customers.isNotEmpty
+              ? customers.first
+              : Customer(
+                  name: custName,
+                  date: DateTime.now(),
+                  note: null,
+                ),
+        );
+      } else {
+        cust = customers.isNotEmpty
+            ? customers.first
+            : Customer(
+                name: 'Unbekannt',
+                date: DateTime.now(),
+                note: null,
+              );
       }
-
-      // Fallback, falls keine ID oder kein Treffer
-      cust ??= customers.isNotEmpty
-          ? customers.first
-          : Customer(
-              id: map['customerId']?.toString() ?? 'unknown',
-              name: map['customerName']?.toString() ?? 'Unbekannt',
-              date: DateTime.now(),
-              note: null,
-            );
 
       try {
         loadedDepletions.add(Depletion.fromMap(map, cust));
       } catch (_) {
-        // Falls Schema nicht passt, überspringen wir den Eintrag
+        // Falls Schema nicht passt, Eintrag überspringen
       }
     }
 
@@ -127,15 +132,16 @@ class Storage {
 }
 
 /// Exportiert eine CSV-Datei, speichert sie in /exports und bietet Share an.
-/// [filename] sollte auf ".csv" enden.
+/// Aufruf wie in main.dart:
+///   await exportCsvFile(context, filename: 'inventar.csv', csv: csv);
 Future<void> exportCsvFile(
   BuildContext context, {
   required String filename,
-  required String content,
+  required String csv, // <- heißt absichtlich 'csv', damit main.dart passt
 }) async {
   try {
     // UTF8-BOM für Excel-Kompatibilität
-    final normalized = content.replaceAll('\r\n', '\n');
+    final normalized = csv.replaceAll('\r\n', '\n');
     final bytes = <int>[0xEF, 0xBB, 0xBF, ...utf8.encode(normalized)];
 
     // Temporäre Datei schreiben
@@ -171,9 +177,4 @@ Future<void> exportCsvFile(
       );
     }
   }
-}
-
-// --- kleine Helfer-Erweiterung ---
-extension _FirstOrNull<E> on Iterable<E> {
-  E? get firstOrNull => isEmpty ? null : first;
 }
