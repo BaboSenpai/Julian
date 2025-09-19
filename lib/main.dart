@@ -19,10 +19,13 @@ import 'package:van_inventory/ui/screens.dart';
 const String _backend = String.fromEnvironment('BACKEND', defaultValue: 'local');
 const bool kUseFirebase = _backend == 'firebase';
 
+import 'dev_force_signout.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (kUseFirebase) {
+  // Optional: Session leeren, wenn per Flag gewünscht (nur Dev):
+  await devForceSignOutIfRequested();
+if (kUseFirebase) {
     await fb_core.Firebase.initializeApp(
       options: fb_opts.DefaultFirebaseOptions.currentPlatform,
     );
