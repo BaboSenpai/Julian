@@ -1,9 +1,13 @@
-// lib/ui/team_tab.dart
+//lib/ui/team_tab.dart
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
-import '../models/models.dart';      // UserMember
-import '../services/cloud.dart';     // Cloud
+// alle Models inkl. UserMember
+import 'package:van_inventory/models/models.dart';
+
+// globale Listen/State (falls hier z. B. items/teamMembers genutzt werden)
+import 'package:van_inventory/models/state.dart';
+
+
 
 class TeamTab extends StatelessWidget {
   const TeamTab({super.key});

@@ -1,13 +1,13 @@
-// lib/storage.dart
-import 'dart:io';
-import 'dart:convert';
+//lib/models/storage.dart
 import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:flutter/material.dart';
 
-import 'models.dart';
+// alle Models (Item, Customer, Depletion, UserMember)
+import 'package:van_inventory/models/models.dart';
+
+// globale Listen/State
+import 'package:van_inventory/models/state.dart';
+
+
 
 late Box<String> skuBox; // Artikelnummern (SKU): key=itemName, value=sku
 

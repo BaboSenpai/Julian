@@ -47,7 +47,10 @@ class VanInventoryApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: kUseFirebase ? const AuthGate() : const HomeScreen(),
+      home: kUseFirebase
+    ? AuthGate(signedIn: const HomeScreen()) // oder dein Widget fürs eingeloggte UI
+    : const HomeScreen(),
+
     );
   }
 }
