@@ -1,24 +1,18 @@
-// lib/services/cloud.dart
+// lib/cloud.dart
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
-import '../models/item.dart';
-import '../models/customer.dart';
-import '../models/depletion.dart';
-import '../models/user_member.dart';
-
-/// Hilfsfunktion für Customer-Dokument-ID (wie zuvor in main.dart)
-String _customerDocId(Customer c) =>
-    '${c.name}|${c.date.millisecondsSinceEpoch}';
+import 'models/user_member.dart';
+import 'models/models.dart';   // enthält Item, Customer, Depletion, ChangeLogEntry
+import 'storage.dart';
 
 class Cloud {
   Cloud._();
+  static fs.FirebaseFirestore get _db => fs.FirebaseFirestore.instance;
 
   static late String tenantId;
-
-  static fs.FirebaseFirestore get _db => fs.FirebaseFirestore.instance;
   static fs.CollectionReference<Map<String, dynamic>> get _tenRoot =>
       _db.collection('tenants');
 
@@ -34,58 +28,58 @@ class Cloud {
   static fs.CollectionReference<Map<String, dynamic>> get _usersCol =>
       _tenRoot.doc(tenantId).collection('users');
 
-  /// Beim App-Start im Firebase-Modus aufrufen
+  static fs.CollectionReference<Map<String, dynamic>> get _logCol =>
+      _tenRoot.doc(tenantId).collection('changelog');
+
+  /// einmalig beim App-Start im Firebase-Modus
   static Future<void> init({required String tenantId}) async {
     Cloud.tenantId = tenantId;
   }
 
-  /// Prüft/erzwingt Team-Mitgliedschaft für den eingeloggten User.
-  /// Falls eine Einladung per E-Mail existiert, wird sie mit der UID verknüpft.
+  /// Stellt sicher, dass der eingeloggte Nutzer Mitglied des Teams ist.
+  /// Falls es einen Eintrag mit derselben E-Mail gibt, wird dessen `uid` gesetzt.
   static Future<bool> ensureMembershipForCurrentUser() async {
     final user = fb_auth.FirebaseAuth.instance.currentUser;
     if (user == null) return false;
 
-    // 1) Direkter Treffer per UID?
+    // 1) Direkter Treffer via UID?
     final uidDoc = await _usersCol.doc(user.uid).get();
     if (uidDoc.exists) return true;
 
-    // 2) Einladung per E-Mail?
+    // 2) Suche per Email (Einladung), E-Mail kann bei manchen Providern null sein
     final email = user.email?.toLowerCase();
     if (email != null && email.isNotEmpty) {
-      final byMail =
-          await _usersCol.where('email', isEqualTo: email).limit(1).get();
+      final byMail = await _usersCol.where('email', isEqualTo: email).limit(1).get();
       if (byMail.docs.isNotEmpty) {
+        // Migrate: setze Doc-ID = uid und übertrage Daten
         final invited = byMail.docs.first;
         final data = invited.data();
         final role = (data['role'] as String?) ?? 'member';
-
         await _usersCol.doc(user.uid).set({
           'email': email,
           'role': role,
           'uid': user.uid,
           'createdAt': fs.FieldValue.serverTimestamp(),
         }, fs.SetOptions(merge: true));
-
+        // Alte Einladung löschen
         await _usersCol.doc(invited.id).delete();
         return true;
       }
     }
+
+    // 3) Kein Eintrag vorhanden -> kein Zugang
     return false;
   }
 
-  // ---- Live Sync -> Callbacks in main.dart liefern (keine Globals hier) ----
+  /// Live-Listener binden: Firestore -> In-Memory + Hive speichern
   static StreamSubscription? _itemsSub;
   static StreamSubscription? _custSub;
   static StreamSubscription? _depSub;
 
-  static Future<void> bindLiveListeners({
-    required void Function(List<Item>) onItems,
-    required void Function(List<Customer>) onCustomers,
-    required void Function(List<Depletion>) onDepletions,
-    required Future<void> Function() onSaveAll,
-  }) async {
+  static Future<void> bindLiveListeners() async {
+    // Items
     _itemsSub?.cancel();
-    _itemsSub = _itemsCol.snapshots().listen((qs) async {
+    _itemsSub = _itemsCol.snapshots().listen((qs) {
       final list = qs.docs.map((d) {
         final m = d.data();
         return Item(
@@ -95,12 +89,13 @@ class Cloud {
           target: (m['target'] ?? 0) as int,
         );
       }).toList();
-      onItems(list);
-      await onSaveAll();
+      items = list;
+      Storage.saveAll();
     });
 
+    // Customers
     _custSub?.cancel();
-    _custSub = _custCol.snapshots().listen((qs) async {
+    _custSub = _custCol.snapshots().listen((qs) {
       final list = qs.docs.map((d) {
         final m = d.data();
         return Customer(
@@ -109,40 +104,37 @@ class Cloud {
           note: m['note'] as String?,
         );
       }).toList();
-      onCustomers(list);
-      await onSaveAll();
+      customers = list;
+      Storage.saveAll();
     });
 
+    // Depletions
     _depSub?.cancel();
-    _depSub =
-        _depCol.orderBy('timestampMs', descending: false).snapshots().listen(
-      (qs) async {
-        final temp = <Depletion>[];
-        for (final d in qs.docs) {
-          final m = d.data();
-          final name = m['customerName'] as String;
-          final dateMs = (m['customerDateMs'] ?? 0) as int;
-
-          final cust = Customer(
-            name: name,
-            date: DateTime.fromMillisecondsSinceEpoch(dateMs),
-          );
-
-          temp.add(Depletion(
-            itemName: m['itemName'] as String,
-            qty: (m['qty'] ?? 0) as int,
-            customer: cust,
-            timestamp: DateTime.fromMillisecondsSinceEpoch(
-                (m['timestampMs'] ?? 0) as int),
-          ));
-        }
-        onDepletions(temp);
-        await onSaveAll();
-      },
-    );
+    _depSub = _depCol.orderBy('timestampMs', descending: false).snapshots().listen((qs) {
+      final temp = <Depletion>[];
+      for (final d in qs.docs) {
+        final m = d.data();
+        final name = m['customerName'] as String;
+        final dateMs = (m['customerDateMs'] ?? 0) as int;
+        final cust = customers.firstWhere(
+          (c) => c.name == name && c.date.millisecondsSinceEpoch == dateMs,
+          orElse: () => Customer(name: name, date: DateTime.fromMillisecondsSinceEpoch(dateMs)),
+        );
+        temp.add(Depletion(
+          itemName: m['itemName'] as String,
+          qty: (m['qty'] ?? 0) as int,
+          customer: cust,
+          timestamp: DateTime.fromMillisecondsSinceEpoch((m['timestampMs'] ?? 0) as int),
+        ));
+      }
+      depletions = temp;
+      Storage.saveAll();
+    });
   }
 
-  // ================= TEAM =================
+  /// ============ TEAM ============
+
+  /// Liste der Team-Mitglieder beobachten
   static Stream<List<UserMember>> watchMembers() {
     return _usersCol.orderBy('email').snapshots().map((qs) {
       return qs.docs.map((d) {
@@ -157,12 +149,11 @@ class Cloud {
     });
   }
 
-  /// Admin trägt Mail + Rolle ein; Verknüpfung mit UID passiert beim ersten Login.
+  /// Benutzer (Einladung) anlegen – Admin gibt E-Mail & Rolle vor
   static Future<void> addMemberByEmail(String email, {String role = 'member'}) async {
     final norm = email.toLowerCase();
-
-    final exist =
-        await _usersCol.where('email', isEqualTo: norm).limit(1).get();
+    // Wenn es bereits einen Doc mit dieser E-Mail (ohne uid) gibt, nur Rolle updaten
+    final exist = await _usersCol.where('email', isEqualTo: norm).limit(1).get();
     if (exist.docs.isNotEmpty) {
       await _usersCol.doc(exist.docs.first.id).set({
         'email': norm,
@@ -171,7 +162,7 @@ class Cloud {
       }, fs.SetOptions(merge: true));
       return;
     }
-
+    // Neu anlegen – ohne uid (wird beim ersten Login verknüpft)
     await _usersCol.add({
       'email': norm,
       'role': role,
@@ -191,10 +182,12 @@ class Cloud {
     await _usersCol.doc(docId).delete();
   }
 
-  // ================= ITEMS =================
+  /// ============ ITEMS ============
+
+  static String _itemId(Item it) => it.name; // einfache ID: Item-Name
   static Future<void> upsertItem(Item it) async {
     final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
-    await _itemsCol.doc(it.name).set({
+    await _itemsCol.doc(_itemId(it)).set({
       'name': it.name,
       'qty': it.qty,
       'min': it.min,
@@ -208,10 +201,14 @@ class Cloud {
     await _itemsCol.doc(name).delete();
   }
 
-  // ================= CUSTOMERS =================
+  /// ============ CUSTOMERS ============
+
+  static String customerDocId(Customer c) =>
+      '${c.name}|${c.date.millisecondsSinceEpoch}';
+
   static Future<void> upsertCustomer(Customer c) async {
     final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
-    await _custCol.doc(_customerDocId(c)).set({
+    await _custCol.doc(customerDocId(c)).set({
       'name': c.name,
       'dateMs': c.date.millisecondsSinceEpoch,
       'note': c.note,
@@ -221,10 +218,11 @@ class Cloud {
   }
 
   static Future<void> deleteCustomer(Customer c) async {
-    await _custCol.doc(_customerDocId(c)).delete();
+    await _custCol.doc(customerDocId(c)).delete();
   }
 
-  // ================= DEPLETIONS =================
+  /// ============ DEPLETIONS ============
+
   static Future<void> addDepletion(Depletion d) async {
     final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
     await _depCol.add({

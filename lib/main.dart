@@ -1,22 +1,26 @@
 // lib/main.dart
+import 'dart:io';
 import 'dart:async';
+import 'dart:convert'; // CSV/BOM
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-// Backend-Wahl
-const String kBackend = String.fromEnvironment('BACKEND', defaultValue: 'local');
-bool get kUseFirebase => kBackend == 'firebase';
-
-// Firebase (nur wenn kUseFirebase)
+// Firebase
 import 'package:firebase_core/firebase_core.dart' as fb_core;
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 import 'firebase_options.dart' as fb_opts;
 
-// Unsere ausgelagerten Module
-import 'models.dart';
-import 'storage.dart';
-import 'csv_export.dart';
-import 'cloud.dart';
+// ---- neue, korrekte Pfade (aus deinem Projektbaum)
+import 'models/models.dart';
+import 'models/storage.dart';
+import 'models/csv_export.dart';
+import 'services/cloud.dart';
+import 'ui/team_tab.dart';
+import 'features/auth/auth_gate.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

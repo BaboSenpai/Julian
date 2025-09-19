@@ -1,3 +1,4 @@
+// lib/models/user_member.dart
 class UserMember {
   UserMember({
     required this.id,
@@ -6,17 +7,11 @@ class UserMember {
     this.uid,
   });
 
-  final String id; // Firestore Doc-ID
+  final String id;     // Firestore Doc-ID
   final String email;
-  final String role; // 'admin' | 'member'
+  final String role;   // 'admin' | 'member'
   final String? uid;
 
-  UserMember copyWith({String? role, String? uid}) {
-    return UserMember(
-      id: id,
-      email: email,
-      role: role ?? this.role,
-      uid: uid ?? this.uid,
-    );
-  }
+  UserMember copyWith({String? role, String? uid}) =>
+      UserMember(id: id, email: email, role: role ?? this.role, uid: uid ?? this.uid);
 }
