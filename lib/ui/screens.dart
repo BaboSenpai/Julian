@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
             DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: activeCustomer == null ? null : customerKey(activeCustomer!),
-                hint: const Text('Kunde wÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤hlen'),
+                hint: const Text('Kunde wÃƒÆ’Ã‚Â¤hlen'),
                 alignment: Alignment.centerRight,
                 borderRadius: BorderRadius.circular(12),
                 items: [
@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ...customers
                       .map((c) => DropdownMenuItem<String?>(
                             value: customerKey(c),
-                            child: Text('${c.name} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ ${fmtDate(c.date)}'),
+                            child: Text('${c.name} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ${fmtDate(c.date)}'),
                           ))
                       .toList()
                     ..sort((a, b) => ((a.child as Text).data!).compareTo((b.child as Text).data!)),
@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Icon(Icons.person, size: 18),
                 const SizedBox(width: 6),
-                Text('Aktiver Kunde: ${activeCustomer!.name} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ ${fmtDate(activeCustomer!.date)}',
+                Text('Aktiver Kunde: ${activeCustomer!.name} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ${fmtDate(activeCustomer!.date)}',
                     style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
             ),
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _ActionCard(icon: Icons.inventory_2, label: 'Inventar', onTap: () => _open(const InventoryScreen())),
               _ActionCard(icon: Icons.list_alt, label: 'Heutige Entnahmen', onTap: () => _open(const TodayDepletionsScreen())),
-              _ActionCard(icon: Icons.receipt_long, label: 'AufmaÃƒÆ’Ã†â€™Ãƒâ€¦Ã‚Â¸', onTap: () => _open(const AufmassScreen())),
+              _ActionCard(icon: Icons.receipt_long, label: 'AufmaÃƒÆ’Ã…Â¸', onTap: () => _open(const AufmassScreen())),
               _ActionCard(icon: Icons.settings, label: 'Einstellungen', onTap: () => _open(const SettingsScreen())),
             ],
           ),
@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: Colors.teal.withOpacity(.05), borderRadius: BorderRadius.circular(12)),
-              child: const Text('Alles gut ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â Keine Artikel unter Minimum.'),
+              child: const Text('Alles gut ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â Keine Artikel unter Minimum.'),
             )
           else
             Column(
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     title: Text(it.name),
                     subtitle: Text(
-                      'Bestand: ${it.qty} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Min: ${it.min} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Ziel: ${it.target}',
+                      'Bestand: ${it.qty} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Min: ${it.min} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Ziel: ${it.target}',
                       style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                     ),
                     trailing: IconButton(
@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.inventory),
-        label: const Text('Inventar ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶ffnen'),
+        label: const Text('Inventar ÃƒÆ’Ã‚Â¶ffnen'),
         onPressed: () => _open(const InventoryScreen()),
       ),
     );
@@ -224,7 +224,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           content: Form(
             key: form,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text('Kunde: ${activeCustomer!.name} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ ${fmtDate(activeCustomer!.date)}'),
+              Text('Kunde: ${activeCustomer!.name} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ${fmtDate(activeCustomer!.date)}'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: qtyCtrl,
@@ -269,7 +269,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               timestamp: DateTime.now(),
               category: 'material',
               action: 'Entnahme gebucht',
-              details: '${item.name}: $before ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${item.qty} (ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢$taken) fÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼r ${activeCustomer!.name}',
+              details: '${item.name}: $before ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${item.qty} (ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢$taken) fÃƒÆ’Ã‚Â¼r ${activeCustomer!.name}',
             ));
           }
         });
@@ -277,7 +277,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
         if (taken < req) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Nur $taken StÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼ck entnommen (Bestand war zu niedrig).')),
+            SnackBar(content: Text('Nur $taken StÃƒÆ’Ã‚Â¼ck entnommen (Bestand war zu niedrig).')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -318,7 +318,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 DropdownButtonFormField<Customer>(
                   value: chosenCustomer,
                   decoration: const InputDecoration(labelText: 'Kunde/Auftrag (vorhanden)'),
-                  items: customers.map((c) => DropdownMenuItem(value: c, child: Text('${c.name} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ ${fmtDate(c.date)}'))).toList(),
+                  items: customers.map((c) => DropdownMenuItem(value: c, child: Text('${c.name} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ${fmtDate(c.date)}'))).toList(),
                   onChanged: (v) => setSB(() => chosenCustomer = v),
                 ),
               const SizedBox(height: 8),
@@ -327,12 +327,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   controller: newNameCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Neuer Kunde/Auftrag (optional)',
-                    hintText: 'z. B. MÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼ller GmbH ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Bad',
+                    hintText: 'z. B. MÃƒÆ’Ã‚Â¼ller GmbH ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Bad',
                   ),
                 )),
                 const SizedBox(width: 8),
                 IconButton(
-                  tooltip: 'Datum wÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤hlen',
+                  tooltip: 'Datum wÃƒÆ’Ã‚Â¤hlen',
                   onPressed: () async {
                     final d = await _pickDate(context, newDate);
                     if (d != null) setSB(() => newDate = d);
@@ -345,7 +345,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 child: Text('Datum: ${fmtDate(newDate)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ),
               const SizedBox(height: 6),
-              const Text('Entweder vorhandenen Kunden wÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤hlen ODER neuen Namen + Datum eintragen.',
+              const Text('Entweder vorhandenen Kunden wÃƒÆ’Ã‚Â¤hlen ODER neuen Namen + Datum eintragen.',
                 style: TextStyle(fontSize: 12)),
             ]),
           ),
@@ -356,7 +356,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 if (!form.currentState!.validate()) return;
                 if (chosenCustomer == null && newNameCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bitte Kunde wÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤hlen oder neu anlegen')),
+                    const SnackBar(content: Text('Bitte Kunde wÃƒÆ’Ã‚Â¤hlen oder neu anlegen')),
                   );
                   return;
                 }
@@ -382,7 +382,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         customers.add(cust);
         changelog.insert(0, ChangeLogEntry(
           timestamp: DateTime.now(), category: 'customer', action: 'Kunde angelegt',
-          details: '${cust.name} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ ${fmtDate(cust.date)}',
+          details: '${cust.name} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ${fmtDate(cust.date)}',
         ));
       } else {
         cust = chosenCustomer!;
@@ -396,7 +396,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           depletions.add(Depletion(itemName: item.name, qty: taken, customer: cust, timestamp: DateTime.now()));
           changelog.insert(0, ChangeLogEntry(
             timestamp: DateTime.now(), category: 'material', action: 'Entnahme gebucht',
-            details: '${item.name}: $before ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${item.qty} (ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢$taken) fÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼r ${cust.name}',
+            details: '${item.name}: $before ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${item.qty} (ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢$taken) fÃƒÆ’Ã‚Â¼r ${cust.name}',
           ));
         }
       });
@@ -404,7 +404,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
       if (taken < req) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nur $taken StÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼ck entnommen (Bestand war zu niedrig).')),
+          SnackBar(content: Text('Nur $taken StÃƒÆ’Ã‚Â¼ck entnommen (Bestand war zu niedrig).')),
         );
       }
     }
@@ -421,7 +421,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Neuen Artikel hinzufÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼gen'),
+        title: const Text('Neuen Artikel hinzufÃƒÆ’Ã‚Â¼gen'),
         content: Form(
           key: form,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -450,12 +450,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (!form.currentState!.validate()) return;
               final minVal = int.parse(min.text), tgtVal = int.parse(tgt.text);
               if (tgtVal < minVal) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€šÃ‚Â¥ Minimum sein')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥ Minimum sein')));
                 return;
               }
               Navigator.pop(ctx, true);
             },
-            child: const Text('HinzufÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼gen'),
+            child: const Text('HinzufÃƒÆ’Ã‚Â¼gen'),
           ),
         ],
       ),
@@ -478,7 +478,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         details: '${it.name} (qty=${it.qty}, min=${it.min}, target=${it.target})',
       ));
       await Storage.saveAll();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾${it.name}ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ hinzugefÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼gt')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾${it.name}ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ hinzugefÃƒÆ’Ã‚Â¼gt')));
     }
   }
 
@@ -523,7 +523,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (!form.currentState!.validate()) return;
               final minVal = int.parse(min.text), tgtVal = int.parse(tgt.text);
               if (tgtVal < minVal) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€šÃ‚Â¥ Minimum sein')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥ Minimum sein')));
                 return;
               }
               Navigator.pop(ctx, true);
@@ -555,10 +555,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       await setSkuForItem(newName, newSku.isEmpty ? null : newSku);
 
       final changes = <String>[];
-      if (before.name   != item.name)   changes.add('Name: ${before.name} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${item.name}');
-      if (before.qty    != item.qty)    changes.add('qty: ${before.qty} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${item.qty}');
-      if (before.min    != item.min)    changes.add('min: ${before.min} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${item.min}');
-      if (before.target != item.target) changes.add('target: ${before.target} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${item.target}');
+      if (before.name   != item.name)   changes.add('Name: ${before.name} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${item.name}');
+      if (before.qty    != item.qty)    changes.add('qty: ${before.qty} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${item.qty}');
+      if (before.min    != item.min)    changes.add('min: ${before.min} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${item.min}');
+      if (before.target != item.target) changes.add('target: ${before.target} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${item.target}');
       changelog.insert(0, ChangeLogEntry(
         timestamp: DateTime.now(), category: 'material', action: 'Artikel bearbeitet',
         details: '${before.name}: ${changes.join(', ')}',
@@ -571,11 +571,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Artikel lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen?'),
-        content: Text('ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾${item.name}ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ wirklich lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen?'),
+        title: const Text('Artikel lÃƒÆ’Ã‚Â¶schen?'),
+        content: Text('ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾${item.name}ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ wirklich lÃƒÆ’Ã‚Â¶schen?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃƒÆ’Ã‚Â¶schen')),
         ],
       ),
     );
@@ -583,7 +583,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       setState(() => items.remove(item));
       await setSkuForItem(item.name, null);
       changelog.insert(0, ChangeLogEntry(
-        timestamp: DateTime.now(), category: 'material', action: 'Artikel gelÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶scht', details: item.name,
+        timestamp: DateTime.now(), category: 'material', action: 'Artikel gelÃƒÆ’Ã‚Â¶scht', details: item.name,
       ));
       await Storage.saveAll();
     }
@@ -606,7 +606,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Suche ArtikelÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦',
+                hintText: 'Suche ArtikelÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -643,25 +643,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   title: Text(item.name),
                   subtitle: Text(
-                    '${item.qty} Stk ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Min: ${item.min} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Ziel: ${item.target}'
-                    '${item.isLow ? '  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢  NachfÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼llen!' : item.isWarn ? "  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢  Achtung" : ''}'
-                    '${sku == null ? '' : '  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢  SKU: $sku'}',
+                    '${item.qty} Stk ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Min: ${item.min} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Ziel: ${item.target}'
+                    '${item.isLow ? '  ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢  NachfÃƒÆ’Ã‚Â¼llen!' : item.isWarn ? "  ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢  Achtung" : ''}'
+                    '${sku == null ? '' : '  ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢  SKU: $sku'}',
                     style: subStyle,
                   ),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     IconButton(
-                      tooltip: 'Entnehmen (ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢)',
+                      tooltip: 'Entnehmen (ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢)',
                       onPressed: item.qty == 0 ? null : () => _logDepletionDialog(item),
                       icon: const Icon(Icons.remove_circle_outline),
                     ),
                     IconButton(
-                      tooltip: 'AuffÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼llen (+1)',
+                      tooltip: 'AuffÃƒÆ’Ã‚Â¼llen (+1)',
                       onPressed: () async {
                         final before = item.qty;
                         setState(() => item.qty++);
                         changelog.insert(0, ChangeLogEntry(
-                          timestamp: DateTime.now(), category: 'material', action: 'Bestand geÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤ndert',
-                          details: '${item.name}: $before ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${item.qty} (+1)',
+                          timestamp: DateTime.now(), category: 'material', action: 'Bestand geÃƒÆ’Ã‚Â¤ndert',
+                          details: '${item.name}: $before ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${item.qty} (+1)',
                         ));
                         await Storage.saveAll();
                       },
@@ -674,7 +674,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       },
                       itemBuilder: (_) => const [
                         PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                        PopupMenuItem(value: 'delete', child: Text('LÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen')),
+                        PopupMenuItem(value: 'delete', child: Text('LÃƒÆ’Ã‚Â¶schen')),
                       ],
                     ),
                   ]),
@@ -714,7 +714,7 @@ class TodayDepletionsScreen extends StatelessWidget {
                 return ListTile(
                   leading: const Icon(Icons.remove_circle_outline, color: Colors.red),
                   title: Text(e.itemName),
-                  subtitle: Text('ÃƒÆ’Ã‚Â¢Ãƒâ€¹Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢${e.qty} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ $hh:$mm Uhr ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ ${e.customer.name} (${fmtDate(e.customer.date)})'),
+                  subtitle: Text('ÃƒÂ¢Ã‹â€ Ã¢â‚¬â„¢${e.qty} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ $hh:$mm Uhr ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${e.customer.name} (${fmtDate(e.customer.date)})'),
                 );
               },
             ),
@@ -740,8 +740,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         appBar: AppBar(
           title: const Text('Einstellungen'),
           bottom: const TabBar(tabs: [
-            Tab(text: 'ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾nderungen ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Material'),
-            Tab(text: 'ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾nderungen ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Kunden'),
+            Tab(text: 'ÃƒÆ’Ã¢â‚¬Å¾nderungen ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Material'),
+            Tab(text: 'ÃƒÆ’Ã¢â‚¬Å¾nderungen ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Kunden'),
             Tab(text: 'Export'),
           ]),
         ),
@@ -767,7 +767,7 @@ class _ChangeLogList extends StatelessWidget {
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     if (entries.isEmpty) {
-      return const Center(child: Text('Noch keine ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾nderungen protokolliert'));
+      return const Center(child: Text('Noch keine ÃƒÆ’Ã¢â‚¬Å¾nderungen protokolliert'));
     }
 
     return ListView.separated(
@@ -781,7 +781,7 @@ class _ChangeLogList extends StatelessWidget {
         return ListTile(
           leading: Icon(category == 'material' ? Icons.inventory_2 : Icons.person),
           title: Text(e.action),
-          subtitle: Text('${e.details}\n${fmtDate(e.timestamp)} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ $hh:$mm'),
+          subtitle: Text('${e.details}\n${fmtDate(e.timestamp)} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ $hh:$mm'),
           isThreeLine: true,
         );
       },
@@ -803,9 +803,9 @@ class _ExportTab extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text('Export: $title'),
         content: const Text(
-          'Wohin mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶chtest du exportieren?\n'
-          'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Excel: ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ffnet/teilt die CSV mit Excel\n'
-          'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Google Sheets: Teilt die CSV zur Sheets-App/Drive'
+          'Wohin mÃƒÆ’Ã‚Â¶chtest du exportieren?\n'
+          'ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Excel: ÃƒÆ’Ã¢â‚¬â€œffnet/teilt die CSV mit Excel\n'
+          'ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Google Sheets: Teilt die CSV zur Sheets-App/Drive'
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Abbrechen')),
@@ -842,11 +842,11 @@ class _ExportTab extends StatelessWidget {
 
         _ExportTile(
           icon: Icons.receipt_long,
-          title: 'Kunden/AufmaÃƒÆ’Ã†â€™Ãƒâ€¦Ã‚Â¸ (zusammengefÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼hrt)',
-          subtitle: 'Kopf: Kunde/Datum/Notiz ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Liste: Artikel, Menge, SKU',
+          title: 'Kunden/AufmaÃƒÆ’Ã…Â¸ (zusammengefÃƒÆ’Ã‚Â¼hrt)',
+          subtitle: 'Kopf: Kunde/Datum/Notiz ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Liste: Artikel, Menge, SKU',
           onTap: () => _confirmAndExport(
             context,
-            title: 'Kunden/AufmaÃƒÆ’Ã†â€™Ãƒâ€¦Ã‚Â¸',
+            title: 'Kunden/AufmaÃƒÆ’Ã…Â¸',
             filename: 'kunden_aufmass.csv',
             buildCsv: () async => CsvBuilders.buildCustomerMergedCsv(
               customers: customers,
@@ -857,8 +857,8 @@ class _ExportTab extends StatelessWidget {
 
         const SizedBox(height: 16),
         const Text(
-          'Hinweis: CSV lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤sst sich in Excel und Google Sheets direkt ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶ffnen. '
-          'FÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼r Google Sheets wird die Datei geteilt ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ wÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤hle dort ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾SheetsÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ bzw. ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾Drive/Speichern in DriveÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“.',
+          'Hinweis: CSV lÃƒÆ’Ã‚Â¤sst sich in Excel und Google Sheets direkt ÃƒÆ’Ã‚Â¶ffnen. '
+          'FÃƒÆ’Ã‚Â¼r Google Sheets wird die Datei geteilt ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ wÃƒÆ’Ã‚Â¤hle dort ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾SheetsÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ bzw. ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Drive/Speichern in DriveÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ.',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
@@ -931,7 +931,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
                   Expanded(child: Text('Datum: ${fmtDate(date)}')),
                   IconButton(
                     icon: const Icon(Icons.event),
-                    tooltip: 'Datum wÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤hlen',
+                    tooltip: 'Datum wÃƒÆ’Ã‚Â¤hlen',
                     onPressed: () async {
                       final d = await showDatePicker(
                         context: context,
@@ -994,14 +994,14 @@ class _AufmassScreenState extends State<AufmassScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('LÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen'),
+        title: const Text('LÃƒÆ’Ã‚Â¶schen'),
         content: Text(
-          'Kunde/Auftrag ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾${cust.name}ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ wirklich lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen?\n'
-          'Die Entnahmen bleiben bestehen (als verwaiste EintrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤ge).',
+          'Kunde/Auftrag ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾${cust.name}ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ wirklich lÃƒÆ’Ã‚Â¶schen?\n'
+          'Die Entnahmen bleiben bestehen (als verwaiste EintrÃƒÆ’Ã‚Â¤ge).',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃƒÆ’Ã‚Â¶schen')),
         ],
       ),
     );
@@ -1025,9 +1025,9 @@ class _AufmassScreenState extends State<AufmassScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AufmaÃƒÆ’Ã†â€™Ãƒâ€¦Ã‚Â¸ = Kunden/AuftrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤ge')),
+      appBar: AppBar(title: const Text('AufmaÃƒÆ’Ã…Â¸ = Kunden/AuftrÃƒÆ’Ã‚Â¤ge')),
       body: grouped.isEmpty
-          ? const Center(child: Text('Noch keine Kunden/AuftrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤ge angelegt'))
+          ? const Center(child: Text('Noch keine Kunden/AuftrÃƒÆ’Ã‚Â¤ge angelegt'))
           : ListView.builder(
               itemCount: keys.length,
               itemBuilder: (c, i) {
@@ -1047,12 +1047,12 @@ class _AufmassScreenState extends State<AufmassScreen> {
                       },
                       itemBuilder: (_) => const [
                         PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                        PopupMenuItem(value: 'delete', child: Text('LÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶schen')),
+                        PopupMenuItem(value: 'delete', child: Text('LÃƒÆ’Ã‚Â¶schen')),
                       ],
                     ),
                     children: [
                       if (list.isEmpty)
-                        const ListTile(title: Text('Noch keine Entnahmen fÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼r diesen Kunden.'))
+                        const ListTile(title: Text('Noch keine Entnahmen fÃƒÆ’Ã‚Â¼r diesen Kunden.'))
                       else
                         ...list.map((e) {
                           final t = TimeOfDay.fromDateTime(e.timestamp);
@@ -1063,18 +1063,18 @@ class _AufmassScreenState extends State<AufmassScreen> {
                             leading: const Icon(Icons.remove_circle_outline, color: Colors.red),
                             title: Text(e.itemName),
                             subtitle: Text(
-                              '${e.qty} Stk ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· $hh:$mm Uhr, ${fmtDate(e.timestamp)}'
-                              '${sku == null ? '' : ' ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· SKU: $sku'}',
+                              '${e.qty} Stk Ãƒâ€šÃ‚Â· $hh:$mm Uhr, ${fmtDate(e.timestamp)}'
+                              '${sku == null ? '' : ' Ãƒâ€šÃ‚Â· SKU: $sku'}',
                             ),
                           );
                         }).toList(),
 
-                      // Export-Button NUR fÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼r diesen Kunden/Auftrag
+                      // Export-Button NUR fÃƒÆ’Ã‚Â¼r diesen Kunden/Auftrag
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.download),
-                          label: const Text('AufmaÃƒÆ’Ã†â€™Ãƒâ€¦Ã‚Â¸ exportieren'),
+                          label: const Text('AufmaÃƒÆ’Ã…Â¸ exportieren'),
                           onPressed: () async {
                             final itemsList = list
                                 .map((d) => {
@@ -1084,7 +1084,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
                                     })
                                 .toList();
 
-                            // CSV fÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼r EINEN Kunden bauen (Semikolon + CRLF)
+                            // CSV fÃƒÆ’Ã‚Â¼r EINEN Kunden bauen (Semikolon + CRLF)
                             String _buildSingleCustomerCsv({
                               required String customer,
                               required DateTime date,
@@ -1097,7 +1097,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
                               buf.writeln('${esc('Datum:')};${esc(fmtDate(date))}');
                               buf.writeln('${esc('Notiz:')};${esc(note)}');
                               buf.writeln('');
-                              buf.writeln('${esc('Material/AufmaÃƒÆ’Ã†â€™Ãƒâ€¦Ã‚Â¸')};${esc('Artikel')};${esc('StÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼ckzahl / Meter')};${esc('Artikelnummer')}');
+                              buf.writeln('${esc('Material/AufmaÃƒÆ’Ã…Â¸')};${esc('Artikel')};${esc('StÃƒÆ’Ã‚Â¼ckzahl / Meter')};${esc('Artikelnummer')}');
                               for (final it in items) {
                                 buf.writeln('${esc('')};${esc(it['name'] ?? '')};${esc(it['quantity'] ?? '')};${esc(it['sku'] ?? '')}');
                               }
