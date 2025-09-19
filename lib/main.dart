@@ -14,22 +14,22 @@ import 'package:van_inventory/features/auth/auth_gate.dart';
 
 import 'package:van_inventory/models/ui_state.dart' show initSkuBox;
 import 'package:van_inventory/ui/screens.dart';
+
+import 'dev_force_signout.dart';
 
 // Backend Switch
 const String _backend = String.fromEnvironment('BACKEND', defaultValue: 'local');
 const bool kUseFirebase = _backend == 'firebase';
-
-import 'dev_force_signout.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Optional: Session leeren, wenn per Flag gewünscht (nur Dev):
-  await devForceSignOutIfRequested();
+  // Optional: Session leeren, wenn per Flag gewÃƒÂ¼nscht (nur Dev):
 if (kUseFirebase) {
     await fb_core.Firebase.initializeApp(
       options: fb_opts.DefaultFirebaseOptions.currentPlatform,
     );
-    await Cloud.init(tenantId: 'van1');
+    
+    // Optional: Session leeren, wenn per Flag gewünscht (nur Dev):
+    await devForceSignOutIfRequested();await Cloud.init(tenantId: 'van1');
   }
 
   await Storage.open();
