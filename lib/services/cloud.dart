@@ -1,12 +1,11 @@
-// lib/cloud.dart
+// lib/services/cloud.dart
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
-import 'models/user_member.dart';
-import 'models/models.dart';   // enthält Item, Customer, Depletion, ChangeLogEntry
-import 'storage.dart';
+// Wichtig: relative Pfade korrekt (wir sind in lib/services/)
+import '../models/models.dart';      // Item, Customer, Depletion, ChangeLogEntry, UserMember + globale Listen & fmtDate
+import '../models/storage.dart';     // Storage.saveAll()
 
 class Cloud {
   Cloud._();
@@ -46,7 +45,7 @@ class Cloud {
     final uidDoc = await _usersCol.doc(user.uid).get();
     if (uidDoc.exists) return true;
 
-    // 2) Suche per Email (Einladung), E-Mail kann bei manchen Providern null sein
+    // 2) Suche per Email
     final email = user.email?.toLowerCase();
     if (email != null && email.isNotEmpty) {
       final byMail = await _usersCol.where('email', isEqualTo: email).limit(1).get();
@@ -61,7 +60,6 @@ class Cloud {
           'uid': user.uid,
           'createdAt': fs.FieldValue.serverTimestamp(),
         }, fs.SetOptions(merge: true));
-        // Alte Einladung löschen
         await _usersCol.doc(invited.id).delete();
         return true;
       }
@@ -133,8 +131,6 @@ class Cloud {
   }
 
   /// ============ TEAM ============
-
-  /// Liste der Team-Mitglieder beobachten
   static Stream<List<UserMember>> watchMembers() {
     return _usersCol.orderBy('email').snapshots().map((qs) {
       return qs.docs.map((d) {
@@ -149,10 +145,8 @@ class Cloud {
     });
   }
 
-  /// Benutzer (Einladung) anlegen – Admin gibt E-Mail & Rolle vor
   static Future<void> addMemberByEmail(String email, {String role = 'member'}) async {
     final norm = email.toLowerCase();
-    // Wenn es bereits einen Doc mit dieser E-Mail (ohne uid) gibt, nur Rolle updaten
     final exist = await _usersCol.where('email', isEqualTo: norm).limit(1).get();
     if (exist.docs.isNotEmpty) {
       await _usersCol.doc(exist.docs.first.id).set({
@@ -162,7 +156,6 @@ class Cloud {
       }, fs.SetOptions(merge: true));
       return;
     }
-    // Neu anlegen – ohne uid (wird beim ersten Login verknüpft)
     await _usersCol.add({
       'email': norm,
       'role': role,
@@ -183,8 +176,8 @@ class Cloud {
   }
 
   /// ============ ITEMS ============
+  static String _itemId(Item it) => it.name; // ID = Item-Name
 
-  static String _itemId(Item it) => it.name; // einfache ID: Item-Name
   static Future<void> upsertItem(Item it) async {
     final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
     await _itemsCol.doc(_itemId(it)).set({
@@ -202,7 +195,6 @@ class Cloud {
   }
 
   /// ============ CUSTOMERS ============
-
   static String customerDocId(Customer c) =>
       '${c.name}|${c.date.millisecondsSinceEpoch}';
 
@@ -222,7 +214,6 @@ class Cloud {
   }
 
   /// ============ DEPLETIONS ============
-
   static Future<void> addDepletion(Depletion d) async {
     final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
     await _depCol.add({

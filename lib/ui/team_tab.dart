@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
-import '../cloud.dart';
-import '../models/user_member.dart';
+import '../models/models.dart';      // UserMember
+import '../services/cloud.dart';     // Cloud
 
 class TeamTab extends StatelessWidget {
   const TeamTab({super.key});
@@ -78,11 +78,7 @@ class TeamTab extends StatelessWidget {
                   builder: (ctx, setSB) => AlertDialog(
                     title: const Text('Benutzer einladen'),
                     content: Column(mainAxisSize: MainAxisSize.min, children: [
-                      TextField(
-                        controller: emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(labelText: 'E-Mail'),
-                      ),
+                      TextField(controller: emailCtrl, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'E-Mail')),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         value: role,
@@ -104,11 +100,8 @@ class TeamTab extends StatelessWidget {
                   ),
                 ),
               );
-              if (ok == true && emailCtrl.text.trim().isNotEmpty) {
+              if (ok == true) {
                 await Cloud.addMemberByEmail(emailCtrl.text.trim(), role: role);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Benutzer hinzugefügt')));
-                }
               }
             },
           ),
