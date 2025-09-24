@@ -1,4 +1,3 @@
-// lib/ui/inventory_screen.dart
 import 'package:flutter/material.dart';
 import 'package:van_inventory/services/cloud.dart';
 
@@ -58,7 +57,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       onPressed: () => _svc.bookMovement(
                         vehicleId: widget.vehicleId,
                         productId: r['productId'],
-                        delta: +1,
+                        delta: 1, // ✅ hier korrigiert
                       ),
                     ),
                   ],
@@ -71,3 +70,4 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 }
+

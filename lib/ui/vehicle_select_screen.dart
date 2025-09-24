@@ -1,7 +1,7 @@
-// lib/ui/vehicle_select_screen.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:van_inventory/services/cloud.dart';
+import 'package:van_inventory/ui/inventory_screen.dart';
 
 class VehicleSelectScreen extends StatelessWidget {
   const VehicleSelectScreen({super.key});

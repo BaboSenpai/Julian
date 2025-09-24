@@ -1,63 +1,32 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart' as fb_core;
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-
 import 'firebase_options.dart' as fb_opts;
 
-import 'package:van_inventory/models/models.dart';
-import 'package:van_inventory/models/state.dart';
-import 'package:van_inventory/models/storage.dart';
 import 'package:van_inventory/services/cloud.dart';
-import 'package:van_inventory/features/auth/auth_gate.dart';
+import 'features/auth/auth_gate.dart';
 
-import 'package:van_inventory/models/ui_state.dart' show initSkuBox;
-import 'package:van_inventory/ui/screens.dart';
-
-import 'dev_force_signout.dart';
-
-// Backend Switch
-const String _backend = String.fromEnvironment('BACKEND', defaultValue: 'local');
-const bool kUseFirebase = _backend == 'firebase';
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Optional: Session leeren, wenn per Flag gewÃƒÂ¼nscht (nur Dev):
-if (kUseFirebase) {
-    await fb_core.Firebase.initializeApp(
-      options: fb_opts.DefaultFirebaseOptions.currentPlatform,
-    );
-    
-    // Optional: Session leeren, wenn per Flag gewünscht (nur Dev):
-    await devForceSignOutIfRequested();await Cloud.init(tenantId: 'van1');
-  }
 
-  await Storage.open();
-  await initSkuBox();
+  await fb_core.Firebase.initializeApp(
+    options: fb_opts.DefaultFirebaseOptions.currentPlatform,
+  );
 
-  runApp(const VanInventoryApp());
+  await Cloud.init(tenantId: 'van1');
+
+  runApp(const MyApp());
 }
 
-class VanInventoryApp extends StatelessWidget {
-  const VanInventoryApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Van Inventory',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      home: kUseFirebase
-          ? StreamBuilder<fb_auth.User?>(
-              stream: fb_auth.FirebaseAuth.instance.authStateChanges(),
-              builder: (context, snap) {
-                if (snap.data == null) return const AuthGate(signedIn: false);
-                return const HomeScreen();
-              },
-            )
-          : const HomeScreen(),
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.teal),
+      home: const AuthGate(), // Login -> HomeScreen (dein altes UI)
     );
   }
 }
