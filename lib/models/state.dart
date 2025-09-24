@@ -1,7 +1,7 @@
 //lib/models/storage.dart
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart'; // fÃƒÆ’Ã‚Â¼r Hive.initFlutter()
+import 'package:hive_flutter/hive_flutter.dart'; // für Hive.initFlutter()
 import 'dart:convert' show utf8;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';

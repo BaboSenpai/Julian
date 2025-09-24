@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'models.dart';
 import 'storage.dart';
 
-// Fallback-Mapping: aktuell keine SKUs -> immer null zurÃƒÆ’Ã‚Â¼ckgeben.
-// (SpÃƒÆ’Ã‚Â¤ter kÃƒÆ’Ã‚Â¶nnt ihr hier eine echte Zuordnung pflegen.)
+// Fallback-Mapping: aktuell keine SKUs -> immer null zurückgeben.
+// (Später könnt ihr hier eine echte Zuordnung pflegen.)
 String? getSkuForItem(String name) => null;
 
 
@@ -28,7 +28,7 @@ class CsvBuilders {
     return sb.toString().replaceAll('\n', '\r\n');
   }
 
-  /// Inventar inkl. Artikelnummern ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Semikolon + CRLF
+  /// Inventar inkl. Artikelnummern â€” Semikolon + CRLF
   static String buildItemsCsv(List<Item> list) {
     final rows = <List<String>>[];
     rows.add(['Name','Bestand','Minimum','Ziel','Status','Artikelnummer']);
@@ -40,7 +40,7 @@ class CsvBuilders {
     return _toCsv(rows);
   }
 
-  /// Kunden/AufmaÃƒÆ’Ã…Â¸ (zusammengefÃƒÆ’Ã‚Â¼hrt)
+  /// Kunden/Aufmaß (zusammengeführt)
   static String buildCustomerMergedCsv({
     required List<Customer> customers,
     required List<Depletion> depletions,
@@ -49,7 +49,7 @@ class CsvBuilders {
     for (final c in customers) {
       rows.add(['Kunde/Auftrag', c.name, 'Datum', _date.format(c.date), 'Notiz', c.note ?? '']);
       rows.add([]);
-      rows.add(['Material/AufmaÃƒÆ’Ã…Â¸', 'Artikel', 'StÃƒÆ’Ã‚Â¼ckzahl / Meter', 'Artikelnummer']);
+      rows.add(['Material/Aufmaß', 'Artikel', 'Stückzahl / Meter', 'Artikelnummer']);
 
       final taken = depletions.where((d) =>
         d.customer.name == c.name &&
@@ -78,7 +78,7 @@ class CsvBuilders {
     rows.add(['Datum:', date]);
     rows.add(['Notiz:', note]);
     rows.add([]);
-    rows.add(['Material/AufmaÃƒÆ’Ã…Â¸','Artikel','StÃƒÆ’Ã‚Â¼ckzahl / Meter','Artikelnummer']);
+    rows.add(['Material/Aufmaß','Artikel','Stückzahl / Meter','Artikelnummer']);
     for (var item in items) {
       rows.add(['', item['name'] ?? '', item['quantity'] ?? '', item['sku'] ?? '']);
     }

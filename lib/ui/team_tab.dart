@@ -38,7 +38,7 @@ class TeamTab extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(child: Text(m.email.isNotEmpty ? m.email[0].toUpperCase() : '?')),
                 title: Text(m.email),
-                subtitle: Text('Rolle: ${m.role}${m.uid == null ? ' ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ (noch nicht registriert)' : ''}'),
+                subtitle: Text('Rolle: ${m.role}${m.uid == null ? ' • (noch nicht registriert)' : ''}'),
                 trailing: PopupMenuButton<String>(
                   onSelected: (v) async {
                     if (v == 'admin' || v == 'member') {
@@ -48,7 +48,7 @@ class TeamTab extends StatelessWidget {
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: const Text('Benutzer entfernen?'),
-                          content: Text('ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾${m.email}ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ wirklich aus dem Team entfernen?'),
+                          content: Text('„${m.email}“ wirklich aus dem Team entfernen?'),
                           actions: [
                             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
                             FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Entfernen')),
@@ -66,7 +66,7 @@ class TeamTab extends StatelessWidget {
                     PopupMenuItem(value: 'admin', child: Text('Rolle: Admin')),
                     PopupMenuItem(value: 'member', child: Text('Rolle: Member')),
                     PopupMenuDivider(),
-                    PopupMenuItem(value: 'reset', child: Text('Passwort zurÃƒÆ’Ã‚Â¼cksetzen')),
+                    PopupMenuItem(value: 'reset', child: Text('Passwort zurücksetzen')),
                     PopupMenuDivider(),
                     PopupMenuItem(
                       value: 'delete',
@@ -79,7 +79,7 @@ class TeamTab extends StatelessWidget {
           ),
           floatingActionButton: FloatingActionButton.extended(
             icon: const Icon(Icons.person_add),
-            label: const Text('Benutzer hinzufÃƒÆ’Ã‚Â¼gen'),
+            label: const Text('Benutzer hinzufügen'),
             onPressed: () async {
               final emailCtrl = TextEditingController();
               String role = 'member';

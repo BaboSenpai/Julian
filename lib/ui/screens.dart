@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
             DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: activeCustomer == null ? null : customerKey(activeCustomer!),
-                hint: const Text('Kunde wÃƒÆ’Ã‚Â¤hlen'),
+                hint: const Text('Kunde wählen'),
                 alignment: Alignment.centerRight,
                 borderRadius: BorderRadius.circular(12),
                 items: [
@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ...customers
                       .map((c) => DropdownMenuItem<String?>(
                             value: customerKey(c),
-                            child: Text('${c.name} – ${fmtDate(c.date)}'),
+                            child: Text('${c.name} â€“ ${fmtDate(c.date)}'),
                           ))
                       .toList()
                     ..sort((a, b) => ((a.child as Text).data!).compareTo((b.child as Text).data!)),
@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Icon(Icons.person, size: 18),
                 const SizedBox(width: 6),
-                Text('Aktiver Kunde: ${activeCustomer!.name} – ${fmtDate(activeCustomer!.date)}',
+                Text('Aktiver Kunde: ${activeCustomer!.name} â€“ ${fmtDate(activeCustomer!.date)}',
                     style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
             ),
@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.inventory),
-        label: const Text('Inventar ÃƒÆ’Ã‚Â¶ffnen'),
+        label: const Text('Inventar öffnen'),
         onPressed: () => _open(const InventoryScreen()),
       ),
     );
@@ -235,7 +235,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           content: Form(
             key: form,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text('Kunde: ${activeCustomer!.name} – ${fmtDate(activeCustomer!.date)}'),
+              Text('Kunde: ${activeCustomer!.name} â€“ ${fmtDate(activeCustomer!.date)}'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: qtyCtrl,
@@ -280,7 +280,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               timestamp: DateTime.now(),
               category: 'material',
               action: 'Entnahme gebucht',
-              details: '${item.name}: $before → ${item.qty} (→$taken) für ${activeCustomer!.name}',
+              details: '${item.name}: $before  →  ${item.qty} (−$taken) für ${activeCustomer!.name}',
             ));
           }
         });
@@ -288,7 +288,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
         if (taken < req) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Nur $taken StÃƒÆ’Ã‚Â¼ck entnommen (Bestand war zu niedrig).')),
+            SnackBar(content: Text('Nur $taken Stück entnommen (Bestand war zu niedrig).')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -329,7 +329,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 DropdownButtonFormField<Customer>(
                   value: chosenCustomer,
                   decoration: const InputDecoration(labelText: 'Kunde/Auftrag (vorhanden)'),
-                  items: customers.map((c) => DropdownMenuItem(value: c, child: Text('${c.name} – ${fmtDate(c.date)}'))).toList(),
+                  items: customers.map((c) => DropdownMenuItem(value: c, child: Text('${c.name} â€“ ${fmtDate(c.date)}'))).toList(),
                   onChanged: (v) => setSB(() => chosenCustomer = v),
                 ),
               const SizedBox(height: 8),
@@ -338,12 +338,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   controller: newNameCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Neuer Kunde/Auftrag (optional)',
-                    hintText: 'z. B. MÃƒÆ’Ã‚Â¼ller GmbH – Bad',
+                    hintText: 'z. B. Müller GmbH â€“ Bad',
                   ),
                 )),
                 const SizedBox(width: 8),
                 IconButton(
-                  tooltip: 'Datum wÃƒÆ’Ã‚Â¤hlen',
+                  tooltip: 'Datum wählen',
                   onPressed: () async {
                     final d = await _pickDate(context, newDate);
                     if (d != null) setSB(() => newDate = d);
@@ -356,7 +356,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 child: Text('Datum: ${fmtDate(newDate)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ),
               const SizedBox(height: 6),
-              const Text('Entweder vorhandenen Kunden wÃƒÆ’Ã‚Â¤hlen ODER neuen Namen + Datum eintragen.',
+              const Text('Entweder vorhandenen Kunden wählen ODER neuen Namen + Datum eintragen.',
                 style: TextStyle(fontSize: 12)),
             ]),
           ),
@@ -367,7 +367,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 if (!form.currentState!.validate()) return;
                 if (chosenCustomer == null && newNameCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bitte Kunde wÃƒÆ’Ã‚Â¤hlen oder neu anlegen')),
+                    const SnackBar(content: Text('Bitte Kunde wählen oder neu anlegen')),
                   );
                   return;
                 }
@@ -393,7 +393,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         customers.add(cust);
         changelog.insert(0, ChangeLogEntry(
           timestamp: DateTime.now(), category: 'customer', action: 'Kunde angelegt',
-          details: '${cust.name} – ${fmtDate(cust.date)}',
+          details: '${cust.name} â€“ ${fmtDate(cust.date)}',
         ));
       } else {
         cust = chosenCustomer!;
@@ -407,7 +407,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           depletions.add(Depletion(itemName: item.name, qty: taken, customer: cust, timestamp: DateTime.now()));
           changelog.insert(0, ChangeLogEntry(
             timestamp: DateTime.now(), category: 'material', action: 'Entnahme gebucht',
-            details: '${item.name}: $before → ${item.qty} (→$taken) für ${cust.name}',
+            details: '${item.name}: $before  →  ${item.qty} (−$taken) für ${cust.name}',
           ));
         }
       });
@@ -415,7 +415,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
       if (taken < req) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nur $taken StÃƒÆ’Ã‚Â¼ck entnommen (Bestand war zu niedrig).')),
+          SnackBar(content: Text('Nur $taken Stück entnommen (Bestand war zu niedrig).')),
         );
       }
     }
@@ -432,7 +432,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Neuen Artikel hinzufÃƒÆ’Ã‚Â¼gen'),
+        title: const Text('Neuen Artikel hinzufügen'),
         content: Form(
           key: form,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -461,12 +461,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (!form.currentState!.validate()) return;
               final minVal = int.parse(min.text), tgtVal = int.parse(tgt.text);
               if (tgtVal < minVal) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥ Minimum sein')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ≥ Minimum sein')));
                 return;
               }
               Navigator.pop(ctx, true);
             },
-            child: const Text('HinzufÃƒÆ’Ã‚Â¼gen'),
+            child: const Text('Hinzufügen'),
           ),
         ],
       ),
@@ -489,7 +489,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         details: '${it.name} (qty=${it.qty}, min=${it.min}, target=${it.target})',
       ));
       await Storage.saveAll();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾${it.name}ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ hinzugefÃƒÆ’Ã‚Â¼gt')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('„${it.name}“ hinzugefügt')));
     }
   }
 
@@ -534,7 +534,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (!form.currentState!.validate()) return;
               final minVal = int.parse(min.text), tgtVal = int.parse(tgt.text);
               if (tgtVal < minVal) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥ Minimum sein')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target muss ≥ Minimum sein')));
                 return;
               }
               Navigator.pop(ctx, true);
@@ -566,10 +566,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       await setSkuForItem(newName, newSku.isEmpty ? null : newSku);
 
       final changes = <String>[];
-      if (before.name   != item.name)   changes.add('Name: ${before.name} → ${item.name}');
-      if (before.qty    != item.qty)    changes.add('qty: ${before.qty} → ${item.qty}');
-      if (before.min    != item.min)    changes.add('min: ${before.min} → ${item.min}');
-      if (before.target != item.target) changes.add('target: ${before.target} → ${item.target}');
+      if (before.name   != item.name)   changes.add('Name: ${before.name}  →  ${item.name}');
+      if (before.qty    != item.qty)    changes.add('qty: ${before.qty}  →  ${item.qty}');
+      if (before.min    != item.min)    changes.add('min: ${before.min}  →  ${item.min}');
+      if (before.target != item.target) changes.add('target: ${before.target}  →  ${item.target}');
       changelog.insert(0, ChangeLogEntry(
         timestamp: DateTime.now(), category: 'material', action: 'Artikel bearbeitet',
         details: '${before.name}: ${changes.join(', ')}',
@@ -583,10 +583,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Artikel löschen?'),
-        content: Text('ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾${item.name}ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ wirklich löschen?'),
+        content: Text('„${item.name}“ wirklich löschen?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃƒÆ’Ã‚Â¶schen')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Löschen')),
         ],
       ),
     );
@@ -617,7 +617,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Suche ArtikelÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦',
+                hintText: 'Suche Artikel…',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -661,7 +661,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     IconButton(
-                      tooltip: 'Entnehmen (→)',
+                      tooltip: 'Entnehmen (−)',
                       onPressed: item.qty == 0 ? null : () => _logDepletionDialog(item),
                       icon: const Icon(Icons.remove_circle_outline),
                     ),
@@ -671,8 +671,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         final before = item.qty;
                         setState(() => item.qty++);
                         changelog.insert(0, ChangeLogEntry(
-                          timestamp: DateTime.now(), category: 'material', action: 'Bestand geÃƒÆ’Ã‚Â¤ndert',
-                          details: '${item.name}: $before → ${item.qty} (+1)',
+                          timestamp: DateTime.now(), category: 'material', action: 'Bestand geändert',
+                          details: '${item.name}: $before  →  ${item.qty} (+1)',
                         ));
                         await Storage.saveAll();
                       },
@@ -685,7 +685,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       },
                       itemBuilder: (_) => const [
                         PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                        PopupMenuItem(value: 'delete', child: Text('LÃƒÆ’Ã‚Â¶schen')),
+                        PopupMenuItem(value: 'delete', child: Text('Löschen')),
                       ],
                     ),
                   ]),
@@ -725,7 +725,7 @@ class TodayDepletionsScreen extends StatelessWidget {
                 return ListTile(
                   leading: const Icon(Icons.remove_circle_outline, color: Colors.red),
                   title: Text(e.itemName),
-                  subtitle: Text('→${e.qty} • $hh:$mm Uhr • ${e.customer.name} (${fmtDate(e.customer.date)})'),
+                  subtitle: Text('−${e.qty} • $hh:$mm Uhr • ${e.customer.name} (${fmtDate(e.customer.date)})'),
                 );
               },
             ),
@@ -751,8 +751,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         appBar: AppBar(
           title: const Text('Einstellungen'),
           bottom: const TabBar(tabs: [
-            Tab(text: 'ÃƒÆ’Ã¢â‚¬Å¾nderungen – Material'),
-            Tab(text: 'ÃƒÆ’Ã¢â‚¬Å¾nderungen – Kunden'),
+            Tab(text: 'Änderungen â€“ Material'),
+            Tab(text: 'Änderungen â€“ Kunden'),
             Tab(text: 'Export'),
           ]),
         ),
@@ -778,7 +778,7 @@ class _ChangeLogList extends StatelessWidget {
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     if (entries.isEmpty) {
-      return const Center(child: Text('Noch keine ÃƒÆ’Ã¢â‚¬Å¾nderungen protokolliert'));
+      return const Center(child: Text('Noch keine Änderungen protokolliert'));
     }
 
     return ListView.separated(
@@ -814,8 +814,8 @@ class _ExportTab extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text('Export: $title'),
         content: const Text(
-          'Wohin mÃƒÆ’Ã‚Â¶chtest du exportieren?\n'
-          '• Excel: ÃƒÆ’Ã¢â‚¬â€œffnet/teilt die CSV mit Excel\n'
+          'Wohin möchtest du exportieren?\n'
+          '• Excel: Öffnet/teilt die CSV mit Excel\n'
           '• Google Sheets: Teilt die CSV zur Sheets-App/Drive'
         ),
         actions: [
@@ -853,7 +853,7 @@ class _ExportTab extends StatelessWidget {
 
         _ExportTile(
           icon: Icons.receipt_long,
-          title: 'Kunden/Aufmaß (zusammengefÃƒÆ’Ã‚Â¼hrt)',
+          title: 'Kunden/Aufmaß (zusammengeführt)',
           subtitle: 'Kopf: Kunde/Datum/Notiz • Liste: Artikel, Menge, SKU',
           onTap: () => _confirmAndExport(
             context,
@@ -868,8 +868,8 @@ class _ExportTab extends StatelessWidget {
 
         const SizedBox(height: 16),
         const Text(
-          'Hinweis: CSV lÃƒÆ’Ã‚Â¤sst sich in Excel und Google Sheets direkt ÃƒÆ’Ã‚Â¶ffnen. '
-          'FÃƒÆ’Ã‚Â¼r Google Sheets wird die Datei geteilt – wÃƒÆ’Ã‚Â¤hle dort ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾SheetsÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ bzw. ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Drive/Speichern in DriveÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ.',
+          'Hinweis: CSV lässt sich in Excel und Google Sheets direkt öffnen. '
+          'Für Google Sheets wird die Datei geteilt â€“ wähle dort „Sheets“ bzw. „Drive/Speichern in Drive“.',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
@@ -942,7 +942,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
                   Expanded(child: Text('Datum: ${fmtDate(date)}')),
                   IconButton(
                     icon: const Icon(Icons.event),
-                    tooltip: 'Datum wÃƒÆ’Ã‚Â¤hlen',
+                    tooltip: 'Datum wählen',
                     onPressed: () async {
                       final d = await showDatePicker(
                         context: context,
@@ -1005,14 +1005,14 @@ class _AufmassScreenState extends State<AufmassScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('LÃƒÆ’Ã‚Â¶schen'),
+        title: const Text('Löschen'),
         content: Text(
-          'Kunde/Auftrag ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾${cust.name}ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ wirklich löschen?\n'
-          'Die Entnahmen bleiben bestehen (als verwaiste EintrÃƒÆ’Ã‚Â¤ge).',
+          'Kunde/Auftrag „${cust.name}“ wirklich löschen?\n'
+          'Die Entnahmen bleiben bestehen (als verwaiste Einträge).',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('LÃƒÆ’Ã‚Â¶schen')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Löschen')),
         ],
       ),
     );
@@ -1036,9 +1036,9 @@ class _AufmassScreenState extends State<AufmassScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Aufmaß = Kunden/AuftrÃƒÆ’Ã‚Â¤ge')),
+      appBar: AppBar(title: const Text('Aufmaß = Kunden/Aufträge')),
       body: grouped.isEmpty
-          ? const Center(child: Text('Noch keine Kunden/AuftrÃƒÆ’Ã‚Â¤ge angelegt'))
+          ? const Center(child: Text('Noch keine Kunden/Aufträge angelegt'))
           : ListView.builder(
               itemCount: keys.length,
               itemBuilder: (c, i) {
@@ -1058,7 +1058,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
                       },
                       itemBuilder: (_) => const [
                         PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                        PopupMenuItem(value: 'delete', child: Text('LÃƒÆ’Ã‚Â¶schen')),
+                        PopupMenuItem(value: 'delete', child: Text('Löschen')),
                       ],
                     ),
                     children: [
@@ -1108,7 +1108,7 @@ class _AufmassScreenState extends State<AufmassScreen> {
                               buf.writeln('${esc('Datum:')};${esc(fmtDate(date))}');
                               buf.writeln('${esc('Notiz:')};${esc(note)}');
                               buf.writeln('');
-                              buf.writeln('${esc('Material/Aufmaß')};${esc('Artikel')};${esc('StÃƒÆ’Ã‚Â¼ckzahl / Meter')};${esc('Artikelnummer')}');
+                              buf.writeln('${esc('Material/Aufmaß')};${esc('Artikel')};${esc('Stückzahl / Meter')};${esc('Artikelnummer')}');
                               for (final it in items) {
                                 buf.writeln('${esc('')};${esc(it['name'] ?? '')};${esc(it['quantity'] ?? '')};${esc(it['sku'] ?? '')}');
                               }

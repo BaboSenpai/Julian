@@ -9,11 +9,11 @@ import 'package:van_inventory/models/state.dart';
 String fmtDate(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
 
-/// --- Aktiver Kunde (fÃƒÆ’Ã‚Â¼r Quick-Flow Entnahme) ---
+/// --- Aktiver Kunde (für Quick-Flow Entnahme) ---
 Customer? activeCustomer;
 String customerKey(Customer c) => '${c.name}|${c.date.millisecondsSinceEpoch}';
 
-/// --- ChangeLog fÃƒÆ’Ã‚Â¼r die UI ---
+/// --- ChangeLog für die UI ---
 class ChangeLogEntry {
   ChangeLogEntry({
     required this.timestamp,

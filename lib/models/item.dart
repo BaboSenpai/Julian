@@ -18,7 +18,7 @@ class Item {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // Status-Helper fÃƒÆ’Ã‚Â¼r UI/CSV
+  // Status-Helper für UI/CSV
   bool get isLow => qty <= min;
   bool get isWarn => qty > min && qty < target;
 

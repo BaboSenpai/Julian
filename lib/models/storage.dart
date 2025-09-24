@@ -1,7 +1,7 @@
 // lib/models/storage.dart
 //
 // Lokale Persistenz mit Hive + CSV-Export-Helfer.
-// - Speichert/LÃƒÆ’Ã‚Â¤dt items, customers, depletions aus einer Hive-Box
+// - Speichert/Lädt items, customers, depletions aus einer Hive-Box
 // - "changelog" wird aktuell ignoriert (kein Model vorhanden)
 // - CSV-Export erzeugt Datei, kopiert sie in /exports und teilt sie via Share
 
@@ -20,12 +20,12 @@ import 'package:van_inventory/models/state.dart';
 class Storage {
   static Box<dynamic>? _box;
 
-  /// ÃƒÆ’Ã¢â‚¬â€œffnet die lokale Box und lÃƒÆ’Ã‚Â¤dt die Daten in die globalen Listen.
+  /// Öffnet die lokale Box und lädt die Daten in die globalen Listen.
   static Future<void> open() async {
-    // Hive initialisieren (nur einmal nÃƒÆ’Ã‚Â¶tig)
+    // Hive initialisieren (nur einmal nötig)
     await Hive.initFlutter();
 
-    // Box ÃƒÆ’Ã‚Â¶ffnen (oder erstellen, wenn sie noch nicht existiert)
+    // Box öffnen (oder erstellen, wenn sie noch nicht existiert)
     _box ??= await Hive.openBox<dynamic>('van_inventory');
 
     // Daten aus Box lesen
@@ -51,7 +51,7 @@ class Storage {
       depletions.map((e) => e.toMap()).toList(),
     );
 
-    // Changelog aktuell stumm ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ignorierenÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ (kein Model vorhanden)
+    // Changelog aktuell stumm „ignorieren“ (kein Model vorhanden)
     await box.put('changelog', <Map<String, dynamic>>[]);
   }
 
@@ -84,14 +84,14 @@ class Storage {
       ..addAll(loadedCustomers);
 
     // ---- Depletions ----
-    // Wir versuchen, den Customer ÃƒÆ’Ã‚Â¼ber Namen zu matchen (bei dir gibt es kein Customer.id).
+    // Wir versuchen, den Customer über Namen zu matchen (bei dir gibt es kein Customer.id).
     final deplList = (box.get('depletions') as List?) ?? const <dynamic>[];
     final List<Depletion> loadedDepletions = <Depletion>[];
 
     for (final raw in deplList.whereType<dynamic>()) {
       final map = Map<String, dynamic>.from(raw as Map);
 
-      // Versuch: Customer per Name auflÃƒÆ’Ã‚Â¶sen
+      // Versuch: Customer per Name auflösen
       Customer? cust;
       final custName = map['customerName']?.toString();
       if (custName != null) {
@@ -118,7 +118,7 @@ class Storage {
       try {
         loadedDepletions.add(Depletion.fromMap(map, cust));
       } catch (_) {
-        // Falls Schema nicht passt, Eintrag ÃƒÆ’Ã‚Â¼berspringen
+        // Falls Schema nicht passt, Eintrag überspringen
       }
     }
 
@@ -137,14 +137,14 @@ class Storage {
 Future<void> exportCsvFile(
   BuildContext context, {
   required String filename,
-  required String csv, // <- heiÃƒÆ’Ã…Â¸t absichtlich 'csv', damit main.dart passt
+  required String csv, // <- heißt absichtlich 'csv', damit main.dart passt
 }) async {
   try {
-    // UTF8-BOM fÃƒÆ’Ã‚Â¼r Excel-KompatibilitÃƒÆ’Ã‚Â¤t
+    // UTF8-BOM für Excel-Kompatibilität
     final normalized = csv.replaceAll('\r\n', '\n');
     final bytes = <int>[0xEF, 0xBB, 0xBF, ...utf8.encode(normalized)];
 
-    // TemporÃƒÆ’Ã‚Â¤re Datei schreiben
+    // Temporäre Datei schreiben
     final cacheDir = await getTemporaryDirectory();
     final cacheFile = File('${cacheDir.path}/$filename');
     await cacheFile.writeAsBytes(bytes, flush: true);
