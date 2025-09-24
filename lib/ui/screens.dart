@@ -1,5 +1,6 @@
 // lib/ui/screens.dart
 import 'package:flutter/material.dart';
+import 'package:van_inventory/ui/vehicle_select_screen.dart';
 
 import 'package:van_inventory/models/models.dart';
 import 'package:van_inventory/models/state.dart';
@@ -35,6 +36,16 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Van Inventory'),
         actions: [
+          IconButton(
+            tooltip: 'Fahrzeuginventar',
+            icon: const Icon(Icons.local_shipping_outlined),
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const VehicleSelectScreen(),
+              ));
+            },
+          ),
+        
           if (customers.isNotEmpty)
             DropdownButtonHideUnderline(
               child: DropdownButton<String?>(

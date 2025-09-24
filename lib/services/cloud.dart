@@ -288,4 +288,90 @@ class Cloud {
     _customersBind = null;
     _depletionsBind = null;
   }
+
+// ===== Inventory per Vehicle (Stocks & Movements) =====
+class StockService {
+  final _db = fs.FirebaseFirestore.instance;
+  String get _tenantId => Cloud._tenantId; // reuse tenant from Cloud
+
+  Stream<List<Map<String, dynamic>>> listenVehicleInventory(String vehicleId) async* {
+    final stocksCol = _db
+        .collection('tenants')
+        .doc(_tenantId)
+        .collection('stocks')
+        .where('vehicleId', isEqualTo: vehicleId);
+
+    await for (final snap in stocksCol.snapshots()) {
+      final rows = <Map<String, dynamic>>[];
+      for (final d in snap.docs) {
+        final m = _ensureMap(d.data());
+        final productId = (m['productId'] ?? '').toString();
+        // join with items (product master data)
+        final prodDoc = await _db
+            .collection('tenants')
+            .doc(_tenantId)
+            .collection('items')
+            .doc(productId)
+            .get();
+        final prod = _ensureMap(prodDoc.data());
+        rows.add({
+          'id': d.id,
+          'productId': productId,
+          'productName': (prod['name'] ?? productId).toString(),
+          'sku': (prod['sku'] ?? '').toString(),
+          'unit': (prod['unit'] ?? 'Stk').toString(),
+          'qty': m['qty'] ?? 0,
+          'minQty': m['minQty'] ?? 0,
+        });
+      }
+      yield rows;
+    }
+  }
+
+  Future<void> bookMovement({
+    required String vehicleId,
+    required String productId,
+    required int delta,
+    String source = 'van',
+    String? jobId,
+  }) async {
+    final uid = fb_auth.FirebaseAuth.instance.currentUser?.uid ?? 'system';
+    final movesCol = _db.collection('tenants').doc(_tenantId).collection('stock_movements');
+    final stocksCol = _db.collection('tenants').doc(_tenantId).collection('stocks');
+
+    await _db.runTransaction((tx) async {
+      final mvRef = movesCol.doc();
+      tx.set(mvRef, {
+        'vehicleId': vehicleId,
+        'productId': productId,
+        'delta': delta,
+        'source': source,
+        'jobId': jobId,
+        'userId': uid,
+        'ts': fs.FieldValue.serverTimestamp(),
+      });
+
+      final q = await tx.get(
+        stocksCol.where('vehicleId', isEqualTo: vehicleId)
+                 .where('productId', isEqualTo: productId)
+                 .limit(1),
+      );
+      if (q.docs.isEmpty) {
+        final newRef = stocksCol.doc();
+        tx.set(newRef, {
+          'vehicleId': vehicleId,
+          'productId': productId,
+          'qty': delta,
+          'minQty': 0,
+        });
+      } else {
+        final ref = q.docs.first.reference;
+        final data = _ensureMap(q.docs.first.data());
+        final current = (data['qty'] ?? 0) as int;
+        tx.update(ref, {'qty': current + delta});
+      }
+    });
+  }
+}
+
 }
